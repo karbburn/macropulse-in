@@ -28,6 +28,7 @@ jobs:
         run: |
           pip install -r backend/requirements.txt
           pip install --no-deps yfinance==1.4.1
+          pip install "websockets>=13.0" --force-reinstall --no-deps
 
       - name: Run nightly precompute
         run: python backend/scripts/precompute_nightly.py

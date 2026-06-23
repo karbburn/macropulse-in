@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir --no-deps yfinance==1.4.1
+    pip install --no-cache-dir --no-deps yfinance==1.4.1 && \
+    pip install --no-cache-dir "websockets>=13.0" --force-reinstall --no-deps
 
 COPY . .
 
