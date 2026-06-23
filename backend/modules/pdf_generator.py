@@ -64,21 +64,25 @@ plt.rcParams.update(CHART_STYLE)
 def chart_to_base64(fig: plt.Figure) -> str:
     """Convert matplotlib figure to base64 PNG string for HTML embedding."""
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',
-                facecolor='#1a1a1a', edgecolor='none')
-    buf.seek(0)
-    img_bytes = buf.read()
-    plt.close(fig)
-    return base64.b64encode(img_bytes).decode('utf-8')
+    try:
+        fig.savefig(buf, format='png', dpi=120, bbox_inches='tight',
+                    facecolor='#1a1a1a', edgecolor='none')
+        buf.seek(0)
+        img_bytes = buf.read()
+        return base64.b64encode(img_bytes).decode('utf-8')
+    finally:
+        plt.close(fig)
 
 def chart_to_bytes(fig: plt.Figure) -> io.BytesIO:
     """Convert matplotlib figure to BytesIO buffer for ReportLab embedding."""
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',
-                facecolor='#1a1a1a', edgecolor='none')
-    buf.seek(0)
-    plt.close(fig)
-    return buf
+    try:
+        fig.savefig(buf, format='png', dpi=120, bbox_inches='tight',
+                    facecolor='#1a1a1a', edgecolor='none')
+        buf.seek(0)
+        return buf
+    finally:
+        plt.close(fig)
 
 # --------------------------------------------------------------------------- #
 # Matplotlib Plotting functions
@@ -142,7 +146,7 @@ def make_reaction_bar_chart(asset: str, snapshot: dict | None, event: MacroEvent
 
 def make_event_combined_chart(snapshots: dict, assets: list[str]) -> plt.Figure:
     """Renders a 2x2 grid containing bar charts of percentage changes for NIFTY, USDINR, VIX, GSEC."""
-    fig, axes = plt.subplots(2, 2, figsize=(7.5, 5.5), dpi=150, facecolor='#1a1a1a')
+    fig, axes = plt.subplots(2, 2, figsize=(7.5, 5.5), dpi=120, facecolor='#1a1a1a')
     axes_flat = axes.flatten()
     all_assets = ["NIFTY", "USDINR", "VIX", "GSEC"]
     windows = ["T-60", "T0", "T+30", "T+2H", "T+1D"]
@@ -344,16 +348,24 @@ def render_html_template(
     scatter_charts_b64 = {}
     if options.get("include_scatter"):
         for asset in options.get("assets", []):
-            sc_data = scatter_data.get(asset, {})
-            fig = make_scatter_chart(sc_data.get("points", []), sc_data.get("regression", {}), asset)
-            scatter_charts_b64[asset] = chart_to_base64(fig)
+            try:
+                sc_data = scatter_data.get(asset, {})
+                fig = make_scatter_chart(sc_data.get("points", []), sc_data.get("regression", {}), asset)
+                scatter_charts_b64[asset] = chart_to_base64(fig)
+            except Exception as e:
+                logger.error(f"Scatter chart generation failed for {asset}: {e}")
+                scatter_charts_b64[asset] = ""
             
     study_charts_b64 = {}
     if options.get("include_study"):
         for asset in ["NIFTY", "USDINR"]:
             if asset in options.get("assets", []):
-                fig = make_study_chart(study_data.get(asset, []))
-                study_charts_b64[asset] = chart_to_base64(fig)
+                try:
+                    fig = make_study_chart(study_data.get(asset, []))
+                    study_charts_b64[asset] = chart_to_base64(fig)
+                except Exception as e:
+                    logger.error(f"Study chart generation failed for {asset}: {e}")
+                    study_charts_b64[asset] = ""
                 
     html_raw = """
     <!DOCTYPE html>
