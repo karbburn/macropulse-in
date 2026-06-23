@@ -278,7 +278,7 @@ def render_html_template(
     options: dict
 ) -> str:
     """Builds and renders the HTML string with embedded matplotlib charts in base64."""
-    from jinja2 import Template
+    from jinja2 import Environment
     
     # 1. Generate Cover & Summary
     cover_date = date.today().strftime("%B %d, %Y")
@@ -597,7 +597,8 @@ def render_html_template(
     </html>
     """
     
-    t = Template(html_raw)
+    env = Environment(autoescape=True)
+    t = env.from_string(html_raw)
     return t.render(
         cover_date=cover_date,
         event_count=event_count,
@@ -922,11 +923,13 @@ def generate_pdf(
     
     events: list[MacroEvent] = []
     snapshots_data = {}
+    skipped_ids: list[str] = []
     
     for eid in event_ids:
         event = event_map.get(eid)
         if not event:
             logger.warning(f"Event {eid} not found during report generation. Skipping.")
+            skipped_ids.append(eid)
             continue
             
         events.append(event)
@@ -944,6 +947,9 @@ def generate_pdf(
             except Exception as e:
                 logger.error(f"Error fetching snapshot for event {eid}, asset {asset}: {e}")
                 snapshots_data[eid][asset] = None
+                
+    if skipped_ids:
+        logger.warning(f"Skipped {len(skipped_ids)} event(s) not found in database: {skipped_ids}")
                 
     # Sort events by date descending to match timeline
     events.sort(key=lambda e: e.date, reverse=True)

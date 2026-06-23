@@ -11,7 +11,6 @@ by the nightly job. Never delete historical event records — only
 update snapshots.
 """
 
-import json
 import logging
 import os
 from datetime import datetime, timezone
@@ -110,7 +109,7 @@ def cache_snapshot(event_id: str, asset: str, data: dict) -> None:
         row = {
             "event_id": event_id,
             "asset": asset,
-            "windows": json.dumps(data) if isinstance(data, dict) else data,
+            "windows": data,  # Pass dict directly; let Supabase client handle serialization
             "computed_at": datetime.now(timezone.utc).isoformat(),
         }
         client.table("snapshots").upsert(row).execute()

@@ -310,7 +310,8 @@ def compute_pct_change(price: float, baseline_price: float) -> float:
         Percentage change, or 0.0 if baseline is zero.
     """
     if baseline_price == 0:
-        return 0.0
+        logger.warning("Baseline price is zero, cannot compute percentage change")
+        return None
     return round(((price / baseline_price) - 1) * 100, 4)
 
 
