@@ -1,1 +1,1 @@
-Macro Event Impact Tracker — India Edition
+MacroPulse — India Edition

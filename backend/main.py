@@ -1,5 +1,5 @@
 """
-Macro Event Impact Tracker — FastAPI Backend
+MacroPulse — FastAPI Backend
 Main application entry point with route registration.
 
 Endpoints (Stage 1 + 2 + 3 + 4):
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Macro Event Impact Tracker — India Edition",
+    title="MacroPulse — India Edition",
     description="API for tracking Indian macro event impacts on financial markets.",
     version="1.0",
 )

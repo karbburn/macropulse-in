@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Macro Event Impact Tracker — India Edition",
+  title: "MacroPulse — India Edition",
   description: "Analyze Indian macroeconomic event impacts on financial markets.",
 };
 
@@ -44,7 +44,7 @@ export default function RootLayout({
               <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
                   <span className="font-serif text-xl font-bold tracking-tight text-brand-amber">
-                    MACRO<span className="text-neutral-400 font-sans text-xs font-semibold ml-1.5 uppercase tracking-widest">Tracker</span>
+                    MACRO<span className="text-neutral-400 font-sans text-xs font-semibold ml-1.5 uppercase tracking-widest">Pulse</span>
                   </span>
                 </Link>
                 <nav className="flex items-center gap-6">
@@ -79,7 +79,7 @@ export default function RootLayout({
 
         {/* Footer */}
         <footer className="border-t border-[#2c2c2c] bg-[#151515] py-6 text-center text-xs text-neutral-500">
-          <p>© {new Date().getFullYear()} Macro Event Impact Tracker — India Edition. Market data powered by yfinance.</p>
+          <p>© {new Date().getFullYear()} MacroPulse — India Edition. Market data powered by yfinance.</p>
         </footer>
       </body>
     </html>

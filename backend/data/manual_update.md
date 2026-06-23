@@ -1,6 +1,6 @@
 # Manual Data Update Guide
 
-This document explains how to add new macro events to the CSV files used by the Macro Event Impact Tracker.
+This document explains how to add new macro events to the CSV files used by the MacroPulse.
 
 ---
 
