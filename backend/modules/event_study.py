@@ -34,7 +34,7 @@ class EventStudyPath:
 def compute_event_study(
     events: list[MacroEvent],
     asset: str,
-    decision_types: list[str] = None
+    decision_types: list[str] | None = None
 ) -> list[EventStudyPath]:
     """
     Computes average indexed close price paths for NIFTY or USDINR

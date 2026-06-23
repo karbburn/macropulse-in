@@ -5,7 +5,7 @@ Builds reaction points and computes linear regressions for market surprise vs re
 """
 
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import date
 import pandas as pd
 from scipy.stats import linregress
@@ -22,14 +22,20 @@ class ReactionPoint:
     asset: str
     surprise_score: float
     reaction_pct: float        # T+2hr % change from T-60 (or custom window)
-    actual: float
-    consensus: float
+    actual: float | None
+    consensus: float | None
 
     def to_dict(self) -> dict:
         """Convert to JSON-serializable dictionary."""
-        result = asdict(self)
-        result["event_date"] = self.event_date.isoformat()
-        return result
+        return {
+            "event_id": self.event_id,
+            "event_date": self.event_date.isoformat(),
+            "asset": self.asset,
+            "surprise_score": self.surprise_score,
+            "reaction_pct": self.reaction_pct,
+            "actual": self.actual,
+            "consensus": self.consensus,
+        }
 
 def build_reaction_points(
     events: list[MacroEvent],
@@ -75,7 +81,7 @@ def build_reaction_points(
 def compute_regression(points: list[ReactionPoint]) -> dict:
     """
     Use scipy.stats.linregress to compute regression parameters.
-    Returnzeros dict if fewer than 5 points. Never crash.
+    Return zeros dict if fewer than 5 points. Never crash.
     """
     if len(points) < 5:
         return {
