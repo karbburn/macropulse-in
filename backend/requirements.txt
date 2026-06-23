@@ -13,7 +13,7 @@ python-dotenv==1.0.1
 beautifulsoup4==4.12.3
 multitasking==0.0.13
 platformdirs==4.3.6
-peewee==3.18.1
+peewee==3.19.0
 protobuf>=3.19.0,<6.0
 pytz>=2022.5
 websockets>=13.0
