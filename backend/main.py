@@ -265,6 +265,11 @@ def generate_report(req: ReportRequest):
         raise HTTPException(status_code=400, detail="At least one event_id must be selected.")
     if not req.assets:
         raise HTTPException(status_code=400, detail="At least one asset class must be selected.")
+    if len(req.event_ids) > 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 30 events allowed per report to prevent timeout."
+        )
     
     # Validate asset names
     VALID_ASSETS = {"NIFTY", "USDINR", "VIX", "GSEC"}

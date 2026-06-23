@@ -995,8 +995,8 @@ def generate_pdf(
     if include_scatter:
         for asset in assets:
             try:
-                # Reuse all_events already loaded above
-                filtered_events = [e for e in all_events if e.event_type != "MPC"]
+                # Use only CPI/IIP events from the user-selected set
+                filtered_events = [e for e in events if e.event_type != "MPC"]
                 points = build_reaction_points(filtered_events, asset, "T+2H")
                 regression = compute_regression(points)
                 
@@ -1015,8 +1015,9 @@ def generate_pdf(
         for asset in ["NIFTY", "USDINR"]:
             if asset in assets:
                 try:
-                    # Reuse all_events already loaded above
-                    paths = compute_event_study(all_events, asset)
+                    # Use only MPC events from the user-selected set
+                    selected_mpc = [e for e in events if e.event_type == "MPC"]
+                    paths = compute_event_study(selected_mpc, asset)
                     study_data[asset] = paths
                 except Exception as e:
                     logger.error(f"Error gathering study paths for {asset}: {e}")
