@@ -56,7 +56,7 @@ export interface ScatterResponse {
 export interface EventStudyPath {
   decision_type: 'hike' | 'cut' | 'hold';
   asset: string;
-  days: [-2, -1, 0, 1, 2];
+  days: number[];
   mean_indexed: number[];
   upper_band: number[];
   lower_band: number[];
