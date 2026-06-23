@@ -176,13 +176,15 @@ def set_reaction_points(points: list[dict]) -> None:
 def get_cached_study(asset: str, decision_type: str) -> dict | None:
     """
     Retrieve cached event study path from Supabase snapshots table.
+    Uses __study__ prefix to avoid namespace collision with real event IDs.
     """
-    return get_cached_snapshot(f"study_{decision_type}", asset)
+    return get_cached_snapshot(f"__study__{decision_type}", asset)
 
 
 def cache_study(asset: str, decision_type: str, data: dict) -> None:
     """
     Cache event study path in Supabase snapshots table.
+    Uses __study__ prefix to avoid namespace collision with real event IDs.
     """
-    cache_snapshot(f"study_{decision_type}", asset, data)
+    cache_snapshot(f"__study__{decision_type}", asset, data)
 

@@ -148,6 +148,7 @@ def compute_event_study(
                 lower_band=[100.0] * 5,
                 event_count=0
             )
+            cache_study(asset, dec_type, path_obj.to_dict())
             results.append(path_obj)
             continue
 
