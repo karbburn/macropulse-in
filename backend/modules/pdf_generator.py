@@ -6,6 +6,7 @@ import os
 import io
 import base64
 import logging
+import functools
 from datetime import date, datetime
 import matplotlib
 matplotlib.use('Agg')
@@ -19,6 +20,12 @@ from modules.reaction import build_reaction_points, compute_regression
 from modules.event_study import compute_event_study
 
 logger = logging.getLogger(__name__)
+
+
+@functools.lru_cache(maxsize=1)
+def _load_all_events_cached() -> list[MacroEvent]:
+    """Cache all events in memory for the process lifetime."""
+    return load_all_events()
 
 # ReportLab imports (fallback engine)
 REPORTLAB_AVAILABLE = False
@@ -597,9 +604,15 @@ def render_html_template(
         </table>
         
         <!-- Grid chart -->
+        {% if event_charts.get(e.id) %}
         <div class="chart-box">
-          <img class="chart-img" src="data:image/png;base64,{{ event_charts.get(e.id, '') }}">
+          <img class="chart-img" src="data:image/png;base64,{{ event_charts[e.id] }}">
         </div>
+        {% else %}
+        <div class="chart-box" style="color: #737373; font-size: 10px; padding: 20px;">
+          Chart generation failed for this event.
+        </div>
+        {% endif %}
       </div>
       {% endfor %}
       
@@ -888,6 +901,7 @@ def generate_pdf_reportlab(
         fig = make_event_combined_chart(snapshots_data.get(e.id, {}), options.get("assets", []))
         img_buf = chart_to_bytes(fig)
         react_img = Image(img_buf, width=420, height=308)
+        img_buf.close()
         event_story.append(react_img)
         
         story.append(KeepTogether(event_story))
@@ -909,6 +923,7 @@ def generate_pdf_reportlab(
                 fig = make_scatter_chart(points, regression, asset)
                 img_buf = chart_to_bytes(fig)
                 scatter_img = Image(img_buf, width=380, height=266)
+                img_buf.close()
                 scatter_story.append(scatter_img)
                 
                 story.append(KeepTogether(scatter_story))
@@ -928,6 +943,7 @@ def generate_pdf_reportlab(
                     fig = make_study_chart(paths_list)
                     img_buf = chart_to_bytes(fig)
                     study_img = Image(img_buf, width=400, height=248)
+                    img_buf.close()
                     study_story.append(study_img)
                     
                     story.append(KeepTogether(study_story))
@@ -959,7 +975,7 @@ def generate_pdf(
     
     # 1. Fetch Events & Snapshots — single load_all_events() call
     from modules.market_snapshot import get_snapshot_with_cache
-    all_events = load_all_events()
+    all_events = _load_all_events_cached()
     event_map = {e.id: e for e in all_events}
     
     events: list[MacroEvent] = []
