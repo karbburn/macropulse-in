@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { MacroEvent } from '../lib/types';
 import { wakeBackend } from '../lib/api';
-import SurpriseBadge from './Surprisebadge';
+import SurpriseBadge from './SurpriseBadge';
 
 interface EventTimelineProps {
   initialEvents: MacroEvent[];
@@ -15,10 +14,10 @@ interface EventTimelineProps {
 type TabType = 'All' | 'MPC' | 'CPI' | 'IIP';
 
 export default function EventTimeline({ initialEvents, initialError }: EventTimelineProps) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('All');
   const [isWarming, setIsWarming] = useState(false);
   const [events, setEvents] = useState<MacroEvent[]>(initialEvents);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Client-side backend warming check
   useEffect(() => {
@@ -47,6 +46,8 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
           if (eventsRes.ok) {
             const data = await eventsRes.json();
             setEvents(data.events);
+          } else {
+            setErrorMsg('Failed to load events after backend wake-up.');
           }
         } catch (wakeErr) {
           console.error('Failed to wake backend:', wakeErr);
@@ -173,6 +174,13 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-6 text-center">
           <p className="text-red-400 font-medium">Error loading timeline events</p>
           <p className="text-neutral-500 text-sm mt-1">{initialError}</p>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-6 text-center mb-6">
+          <p className="text-red-400 font-medium">Error</p>
+          <p className="text-neutral-500 text-sm mt-1">{errorMsg}</p>
         </div>
       )}
 
