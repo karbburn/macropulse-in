@@ -8,7 +8,9 @@ export async function wakeBackend(): Promise<void> {
     try {
       const res = await fetch(`${BASE_URL}/health`, { cache: 'no-store' });
       if (res.ok) return;
-    } catch {}
+    } catch {
+      // Expected during cold start — retry silently
+    }
     await new Promise(r => setTimeout(r, 3000));
   }
   throw new Error('Backend unavailable');
@@ -69,7 +71,7 @@ export async function fetchScatter(
 
 export async function fetchStudy(asset: string): Promise<{ paths: EventStudyPath[] }> {
   const res = await fetch(`${BASE_URL}/study?asset=${asset}`, {
-    cache: 'no-store',
+    next: { revalidate: 3600 },
   });
 
   if (!res.ok) {
