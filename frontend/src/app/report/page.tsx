@@ -18,6 +18,8 @@ export default function ReportPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const MAX_EVENTS = 20;
+
   useEffect(() => {
     fetchEvents('all', undefined, undefined, 100)
       .then((data) => {
@@ -43,11 +45,14 @@ export default function ReportPage() {
   });
 
   const handleToggleEvent = (eventId: string) => {
-    setSelectedEventIds((prev) =>
-      prev.includes(eventId)
-        ? prev.filter((id) => id !== eventId)
-        : [...prev, eventId]
-    );
+    setSelectedEventIds((prev) => {
+      if (prev.includes(eventId)) return prev.filter((id) => id !== eventId);
+      if (prev.length >= MAX_EVENTS) {
+        setErrorMsg(`Maximum ${MAX_EVENTS} events per report.`);
+        return prev;
+      }
+      return [...prev, eventId];
+    });
   };
 
   const handleSelectAllFiltered = () => {
@@ -121,12 +126,10 @@ export default function ReportPage() {
       window.URL.revokeObjectURL(url);
 
       setSuccessMsg('PDF Report downloaded successfully.');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to generate PDF:', err);
-      setErrorMsg(
-        err?.message ||
-          'Failed to connect to the PDF generator backend endpoint. Ensure Stage 6 Backend PDF module is implemented.'
-      );
+      const message = err instanceof Error ? err.message : 'Failed to connect to the PDF generator backend endpoint. Ensure Stage 6 Backend PDF module is implemented.';
+      setErrorMsg(message);
     } finally {
       setIsGenerating(false);
     }

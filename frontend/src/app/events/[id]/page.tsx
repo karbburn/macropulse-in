@@ -23,13 +23,14 @@ export default async function Page({ params }: PageProps) {
         <EventDetailView detail={detail} />
       </div>
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error(`Error loading detail for event ${id}:`, err);
+    const message = err instanceof Error ? err.message : `Failed to fetch event ID: ${id}`;
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-6">
           <p className="text-red-400 font-medium text-lg">Error loading event details</p>
-          <p className="text-neutral-500 text-sm mt-1">{err?.message || `Failed to fetch event ID: ${id}`}</p>
+          <p className="text-neutral-500 text-sm mt-1">{message}</p>
         </div>
       </div>
     );

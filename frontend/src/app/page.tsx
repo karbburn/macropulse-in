@@ -13,9 +13,10 @@ export default async function Page() {
   try {
     const data = await fetchEvents('all', undefined, undefined, 100);
     events = data.events;
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error in server component fetchEvents:', err);
-    errorMsg = err?.message || 'Failed to load timeline events';
+    const message = err instanceof Error ? err.message : 'Failed to load timeline events';
+    errorMsg = message;
   }
 
   return (

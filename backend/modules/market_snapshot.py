@@ -296,7 +296,7 @@ def find_closest_candle(
 #  Percentage-change helper
 # --------------------------------------------------------------------------- #
 
-def compute_pct_change(price: float, baseline_price: float) -> float:
+def compute_pct_change(price: float, baseline_price: float) -> float | None:
     """
     Compute percentage change from a baseline, rounded to 4 decimal places.
 

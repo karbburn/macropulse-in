@@ -78,7 +78,7 @@ def list_events(
         all_events = load_all_events()
     except Exception as e:
         logger.error(f"Failed to load events: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to load events: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to load events")
 
     # Parse date filters
     parsed_from: date | None = None
@@ -129,7 +129,7 @@ def get_event(event_id: str) -> dict:
         event = get_event_by_id(event_id)
     except Exception as e:
         logger.error(f"Error retrieving event {event_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error retrieving event: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal error retrieving event")
 
     if event is None:
         raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
@@ -200,7 +200,7 @@ def get_scatter(
         points = build_reaction_points(filtered_events, asset, window)
     except Exception as e:
         logger.error(f"Error building reaction points: {e}")
-        raise HTTPException(status_code=500, detail=f"Error building reaction points: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error building reaction points")
 
     if not points:
         return {
@@ -241,7 +241,7 @@ def get_study(
         paths = compute_event_study(all_events, asset)
     except Exception as e:
         logger.error(f"Error computing event study for {asset}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error computing event study: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal error computing event study. Please try again later.")
 
     return {
         "paths": [p.to_dict() for p in paths]
@@ -300,6 +300,6 @@ async def generate_report(req: ReportRequest):
         )
     except Exception as e:
         logger.error(f"Error generating PDF report: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to generate PDF report: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
 
 
