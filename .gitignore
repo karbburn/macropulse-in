@@ -1,0 +1,39 @@
+# Reference Files & Spec documentation (Not required for public github repo)
+/Reference files/
+**/AGENTS.md
+**/agents.md
+**/Agents.md
+
+# Generated reports & logs
+*.pdf
+**/*.pdf
+**/*.log
+
+# Backend local environments & configurations
+backend/.env
+backend/*.env
+backend/.env.*
+
+# Backend Python compiled files & caches
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.vscode/
+.idea/
+
+# Backend local test scripts (not part of production)
+backend/test_stage1.py
+backend/test_stage2.py
+backend/test_stage3.py
+backend/test_stage4.py
+backend/test_yfinance.py
+
+# Frontend dependencies, local environment settings & builds
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env*.local
+frontend/*.tsbuildinfo

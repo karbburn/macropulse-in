@@ -1,0 +1,246 @@
+"""
+Macro Event Impact Tracker — FastAPI Backend
+Main application entry point with route registration.
+
+Endpoints (Stage 1 + 2 + 3 + 4):
+  GET /health          — Health check
+  GET /events          — List all events with optional filters
+  GET /events/{id}     — Get single event by ID + market snapshots
+  GET /scatter         — Get scatter data and regression for an asset
+  GET /study           — Get event study paths for hike/cut/hold
+"""
+
+import logging
+from datetime import date
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+
+from modules.event_calendar import load_all_events, get_event_by_id, filter_events
+from modules.market_snapshot import get_all_snapshots
+from modules.reaction import build_reaction_points, compute_regression
+from modules.event_study import compute_event_study
+
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Macro Event Impact Tracker — India Edition",
+    description="API for tracking Indian macro event impacts on financial markets.",
+    version="1.0",
+)
+
+# CORS middleware — allow all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+def health_check() -> dict:
+    """Health check endpoint. Used to wake Render free tier."""
+    return {"status": "ok", "version": "1.0"}
+
+
+@app.get("/events")
+def list_events(
+    event_type: str = Query(default="all", description="Filter by event type: MPC, CPI, IIP, or all"),
+    from_date: Optional[str] = Query(default=None, description="Start date filter (YYYY-MM-DD)"),
+    to_date: Optional[str] = Query(default=None, description="End date filter (YYYY-MM-DD)"),
+    limit: int = Query(default=100, ge=1, le=500, description="Maximum number of events to return"),
+) -> dict:
+    """
+    Returns all events, filterable by type, date range, and limit.
+
+    Query params:
+      - event_type: MPC | CPI | IIP | all (default: all)
+      - from_date: YYYY-MM-DD
+      - to_date: YYYY-MM-DD
+      - limit: int (default: 100)
+    """
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Failed to load events: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load events: {str(e)}")
+
+    # Parse date filters
+    parsed_from: date | None = None
+    parsed_to: date | None = None
+
+    if from_date:
+        try:
+            parsed_from = date.fromisoformat(from_date)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid from_date format: '{from_date}'. Use YYYY-MM-DD.",
+            )
+
+    if to_date:
+        try:
+            parsed_to = date.fromisoformat(to_date)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid to_date format: '{to_date}'. Use YYYY-MM-DD.",
+            )
+
+    # Apply filters
+    filtered = filter_events(
+        events=all_events,
+        event_type=event_type if event_type != "all" else None,
+        from_date=parsed_from,
+        to_date=parsed_to,
+        limit=limit,
+    )
+
+    return {
+        "events": [e.to_dict() for e in filtered],
+        "total": len(filtered),
+    }
+
+
+@app.get("/events/{event_id}")
+def get_event(event_id: str) -> dict:
+    """
+    Returns full event detail including market snapshots for all 4 assets.
+
+    Each asset snapshot contains price data at five time windows:
+    T-60, T0, T+30, T+2H, T+1D — with % change from T-60 baseline.
+    """
+    try:
+        event = get_event_by_id(event_id)
+    except Exception as e:
+        logger.error(f"Error retrieving event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving event: {str(e)}")
+
+    if event is None:
+        raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
+
+    # Compute or retrieve cached snapshots for all four assets
+    try:
+        snapshots = get_all_snapshots(event)
+    except Exception as e:
+        logger.error(f"Error computing snapshots for {event_id}: {e}")
+        snapshots = {"NIFTY": None, "USDINR": None, "VIX": None, "GSEC": None}
+
+    return {
+        "event": event.to_dict(),
+        "snapshots": snapshots,
+    }
+
+
+@app.get("/scatter")
+def get_scatter(
+    asset: str = Query(..., description="Asset class: NIFTY, USDINR, VIX, GSEC"),
+    event_type: str = Query(default="all", description="Event type: CPI, IIP, MPC, or all"),
+    window: str = Query(default="T+2H", description="Reaction window: T+30, T+2H, T+1D"),
+) -> dict:
+    """
+    Returns reaction points and linear regression data for scatter plot.
+    """
+    asset = asset.upper()
+    if asset not in ["NIFTY", "USDINR", "VIX", "GSEC"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid asset: '{asset}'. Must be one of NIFTY, USDINR, VIX, GSEC."
+        )
+
+    event_type = event_type.upper()
+    if event_type not in ["CPI", "IIP", "MPC", "ALL"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid event_type: '{event_type}'. Must be one of CPI, IIP, MPC, ALL."
+        )
+
+    window = window.upper()
+    if window not in ["T-60", "T0", "T+30", "T+2H", "T+1D"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid window: '{window}'. Must be one of T-60, T0, T+30, T+2H, T+1D."
+        )
+
+    # MPC events do not have surprise scores
+    if event_type == "MPC":
+        return {
+            "points": [],
+            "regression": {"slope": 0.0, "intercept": 0.0, "r_squared": 0.0},
+            "message": "MPC events do not have numeric surprise scores."
+        }
+
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Error loading events for scatter: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load events")
+
+    # Filter events by type (excluding MPC because MPC surprise_score is always None)
+    filtered_events = [e for e in all_events if e.event_type != "MPC"]
+    if event_type != "ALL":
+        filtered_events = [e for e in filtered_events if e.event_type == event_type]
+
+    try:
+        points = build_reaction_points(filtered_events, asset, window)
+    except Exception as e:
+        logger.error(f"Error building reaction points: {e}")
+        raise HTTPException(status_code=500, detail=f"Error building reaction points: {str(e)}")
+
+    if not points:
+        return {
+            "points": [],
+            "regression": {"slope": 0.0, "intercept": 0.0, "r_squared": 0.0},
+            "message": "No consensus or market reaction data available for the selected parameters."
+        }
+
+    regression = compute_regression(points)
+
+    return {
+        "points": [p.to_dict() for p in points],
+        "regression": regression
+    }
+
+
+@app.get("/study")
+def get_study(
+    asset: str = Query(..., description="Asset class: NIFTY or USDINR"),
+) -> dict:
+    """
+    Returns event study paths (hike, cut, hold) for NIFTY or USDINR.
+    """
+    asset = asset.upper()
+    if asset not in ["NIFTY", "USDINR"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid asset: '{asset}'. Event study only supports NIFTY or USDINR."
+        )
+
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Error loading events for study: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load events")
+
+    try:
+        paths = compute_event_study(all_events, asset)
+    except Exception as e:
+        logger.error(f"Error computing event study for {asset}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error computing event study: {str(e)}")
+
+    return {
+        "paths": [p.to_dict() for p in paths]
+    }
+
+
