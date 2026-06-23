@@ -10,12 +10,14 @@ Endpoints (Stage 1 + 2 + 3 + 4):
   GET /study           — Get event study paths for hike/cut/hold
 """
 
+import asyncio
 import logging
 from datetime import date
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from modules.event_calendar import load_all_events, get_event_by_id, filter_events
@@ -246,9 +248,6 @@ def get_study(
     }
 
 
-from fastapi.responses import StreamingResponse
-import io
-
 class ReportRequest(BaseModel):
     event_ids: list[str]
     assets: list[str]
@@ -257,10 +256,12 @@ class ReportRequest(BaseModel):
 
 
 @app.post("/report")
-def generate_report(req: ReportRequest):
+async def generate_report(req: ReportRequest):
     """
     Generates and returns the macro impact PDF report.
     """
+    import io
+
     if not req.event_ids:
         raise HTTPException(status_code=400, detail="At least one event_id must be selected.")
     if not req.assets:
@@ -270,7 +271,7 @@ def generate_report(req: ReportRequest):
             status_code=400,
             detail="Maximum 30 events allowed per report to prevent timeout."
         )
-    
+        
     # Validate asset names
     VALID_ASSETS = {"NIFTY", "USDINR", "VIX", "GSEC"}
     invalid = [a for a in req.assets if a not in VALID_ASSETS]
@@ -281,11 +282,14 @@ def generate_report(req: ReportRequest):
         )
         
     try:
-        pdf_bytes = generate_pdf(
-            event_ids=req.event_ids,
-            assets=req.assets,
-            include_scatter=req.include_scatter,
-            include_study=req.include_study
+        loop = asyncio.get_event_loop()
+        pdf_bytes = await loop.run_in_executor(
+            None,
+            generate_pdf,
+            req.event_ids,
+            req.assets,
+            req.include_scatter,
+            req.include_study,
         )
         return StreamingResponse(
             io.BytesIO(pdf_bytes),

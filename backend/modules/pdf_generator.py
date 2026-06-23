@@ -2,7 +2,6 @@
 # PDF generation using WeasyPrint with a ReportLab fallback.
 # REPORTLAB is used when WeasyPrint or its C-libraries (Pango/Cairo) are missing.
 
-import os
 import io
 import base64
 import logging
@@ -95,62 +94,6 @@ def chart_to_bytes(fig: plt.Figure) -> io.BytesIO:
 # Matplotlib Plotting functions
 # --------------------------------------------------------------------------- #
 
-def make_reaction_bar_chart(asset: str, snapshot: dict | None, event: MacroEvent) -> plt.Figure:
-    """Renders a single asset bar chart of % change from T-60."""
-    fig, ax = plt.subplots(figsize=(3.6, 2.5), dpi=120)
-    fig.patch.set_facecolor('#1a1a1a')
-    ax.set_facecolor('#242424')
-    
-    windows = ["T-60", "T0", "T+30", "T+2H", "T+1D"]
-    
-    if not snapshot:
-        ax.text(0.5, 0.5, "Data Unavailable", color='#737373', ha='center', va='center', fontsize=10)
-        ax.set_title(f"{asset} Reaction", color='#e5e7eb', fontsize=10, fontweight='bold')
-        ax.axis('off')
-        return fig
-        
-    labels = []
-    values = []
-    colors_list = []
-    
-    for w in windows:
-        w_data = snapshot.get(w)
-        if w_data and w_data.get("pct_change_from_T60") is not None:
-            val = w_data["pct_change_from_T60"]
-            values.append(val)
-            labels.append(w)
-            if w == "T-60":
-                colors_list.append("#737373")
-            elif val > 0:
-                colors_list.append("#10b981")
-            else:
-                colors_list.append("#ef4444")
-        else:
-            values.append(0.0)
-            labels.append(w)
-            colors_list.append("#3f3f46")
-            
-    ax.bar(labels, values, color=colors_list, edgecolor='#3a3a3a', width=0.45)
-    ax.set_title(f"{asset} Reaction (%)", color='#e5e7eb', fontsize=9, fontweight='bold')
-    ax.grid(axis='y', linestyle='--', color='#2a2a2a')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#3a3a3a')
-    ax.spines['bottom'].set_color('#3a3a3a')
-    ax.tick_params(colors='#9ca3af', labelsize=7)
-    
-    for i, v in enumerate(values):
-        # Skip labels for missing windows loaded as 0.0
-        w_data = snapshot.get(labels[i])
-        if v == 0.0 and (not w_data or w_data.get("pct_change_from_T60") is None):
-            continue
-        va = 'bottom' if v >= 0 else 'top'
-        offset = 0.05 if v >= 0 else -0.05
-        ax.text(i, v + offset, f"{v:+.2f}%", ha='center', va=va, color='#e5e7eb', fontsize=6, fontfamily='monospace')
-        
-    plt.tight_layout()
-    return fig
-
 def make_event_combined_chart(snapshots: dict, assets: list[str]) -> plt.Figure:
     """Renders a 2x2 grid containing bar charts of percentage changes for NIFTY, USDINR, VIX, GSEC."""
     fig, axes = plt.subplots(2, 2, figsize=(7.5, 5.5), dpi=120, facecolor='#1a1a1a')
@@ -229,8 +172,8 @@ def make_scatter_chart(points: list, regression: dict, asset: str) -> plt.Figure
         ax.axis('off')
         return fig
         
-    x = [p.surprise_score if hasattr(p, 'surprise_score') else p['surprise_score'] for p in points]
-    y = [p.reaction_pct if hasattr(p, 'reaction_pct') else p['reaction_pct'] for p in points]
+    x = [p['surprise_score'] for p in points]
+    y = [p['reaction_pct'] for p in points]
     
     ax.scatter(x, y, color='#f59e0b', alpha=0.7, edgecolors='#1a1a1a', s=35, label='Events')
     
@@ -964,7 +907,6 @@ def generate_pdf(
     assets: list[str],
     include_scatter: bool,
     include_study: bool,
-    supabase_client=None  # Unused — kept for backward API compatibility
 ) -> bytes:
     """
     Main orchestrator that gathers event snapshots, scatter plot data, and event
