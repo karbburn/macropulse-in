@@ -22,7 +22,7 @@ import logging
 import os
 import sys
 import time as time_module
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, date as date_type, timezone, timedelta
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -298,6 +298,27 @@ def main() -> None:
     new_cpi = _fetch_new_cpi_from_finnhub()
     if new_cpi:
         logger.info(f"Found {len(new_cpi)} CPI events from Finnhub.")
+        for cpi in new_cpi:
+            event_id = f"CPI-{cpi['date']}"
+            existing = next((e for e in all_events if e.id == event_id), None)
+            if existing is None:
+                new_event = MacroEvent(
+                    id=event_id,
+                    event_type="CPI",
+                    date=date_type.fromisoformat(cpi["date"]),
+                    time=None,
+                    outcome=str(cpi["actual"]) if cpi.get("actual") else None,
+                    actual=cpi.get("actual"),
+                    consensus=cpi.get("consensus"),
+                    surprise_score=None,
+                    notes=f"Source: {cpi.get('source', 'Finnhub')}",
+                )
+                all_events.append(new_event)
+            elif existing.actual is None and cpi.get("actual") is not None:
+                existing.actual = cpi["actual"]
+                existing.outcome = str(cpi["actual"])
+                if cpi.get("consensus") is not None:
+                    existing.consensus = cpi["consensus"]
     else:
         logger.info("No new CPI events from Finnhub.")
 
@@ -308,6 +329,25 @@ def main() -> None:
     new_iip = _fetch_new_iip_from_datagov()
     if new_iip:
         logger.info(f"Found {len(new_iip)} IIP records from data.gov.in.")
+        for iip in new_iip:
+            event_id = f"IIP-{iip['date']}"
+            existing = next((e for e in all_events if e.id == event_id), None)
+            if existing is None:
+                new_event = MacroEvent(
+                    id=event_id,
+                    event_type="IIP",
+                    date=date_type.fromisoformat(iip["date"]),
+                    time=None,
+                    outcome=str(iip["actual"]) if iip.get("actual") else None,
+                    actual=iip.get("actual"),
+                    consensus=iip.get("consensus"),
+                    surprise_score=None,
+                    notes=f"Source: {iip.get('source', 'data.gov.in')}",
+                )
+                all_events.append(new_event)
+            elif existing.actual is None and iip.get("actual") is not None:
+                existing.actual = iip["actual"]
+                existing.outcome = str(iip["actual"])
     else:
         logger.info("No new IIP events from data.gov.in.")
 
