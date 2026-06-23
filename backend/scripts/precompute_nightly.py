@@ -56,6 +56,7 @@ from modules.event_calendar import (
 from modules.market_snapshot import (
     TICKERS,
     get_snapshot_with_cache,
+    _compute_snapshot,
 )
 from modules.reaction import build_reaction_points
 from modules.cache import (
@@ -101,6 +102,35 @@ def _snapshot_is_stale(event_id: str, asset: str) -> bool:
     except Exception as e:
         logger.warning(f"Error checking snapshot staleness for {event_id}/{asset}: {e}")
         return True
+
+
+def _get_all_snapshot_timestamps() -> dict[tuple[str, str], datetime]:
+    """
+    Query all snapshot timestamps once, return {(event_id, asset): computed_at}.
+    Replaces N+1 per-pair staleness queries with a single batch query.
+    """
+    client = _get_supabase_client()
+    if client is None:
+        return {}
+
+    try:
+        response = (
+            client.table("snapshots")
+            .select("event_id, asset, computed_at")
+            .execute()
+        )
+        timestamps = {}
+        for row in (response.data or []):
+            key = (row["event_id"], row["asset"])
+            computed_at_str = row.get("computed_at", "")
+            if computed_at_str:
+                timestamps[key] = datetime.fromisoformat(
+                    computed_at_str.replace("Z", "+00:00")
+                )
+        return timestamps
+    except Exception as e:
+        logger.warning(f"Error fetching snapshot timestamps: {e}")
+        return {}
 
 
 def _upsert_events_to_supabase(events: list[MacroEvent]) -> int:
@@ -364,18 +394,25 @@ def main() -> None:
     logger.info("Step 5: Computing market snapshots...")
     assets = list(TICKERS.keys())  # NIFTY, USDINR, VIX, GSEC
 
+    # Batch-fetch all existing snapshot timestamps (1 query instead of N)
+    snapshot_timestamps = _get_all_snapshot_timestamps()
+    logger.info(f"Fetched timestamps for {len(snapshot_timestamps)} existing snapshots.")
+
     for event in all_events:
         for asset in assets:
             try:
-                # Check if snapshot exists and is fresh
-                if not _snapshot_is_stale(event.id, asset):
-                    snapshots_skipped += 1
-                    continue
+                # Check staleness locally using the batch-fetched timestamps
+                computed_at = snapshot_timestamps.get((event.id, asset))
+                if computed_at is not None:
+                    age = datetime.now(timezone.utc) - computed_at
+                    if age <= timedelta(hours=25):
+                        snapshots_skipped += 1
+                        continue
 
-                # Compute fresh snapshot (get_snapshot_with_cache handles
-                # yfinance call + 1s sleep + Supabase caching internally)
-                result = get_snapshot_with_cache(event, asset)
-                if result is not None:
+                # Directly compute fresh snapshot (bypass cache — we know it's stale/missing)
+                snapshot_data = _compute_snapshot(event, asset)
+                if snapshot_data is not None:
+                    cache_snapshot(event.id, asset, snapshot_data)
                     snapshots_computed += 1
                 else:
                     logger.warning(f"No data available for {event.id}/{asset}")
