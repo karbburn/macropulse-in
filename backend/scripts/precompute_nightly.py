@@ -480,7 +480,9 @@ def main() -> None:
 
     if errors > 0:
         logger.warning(f"Completed with {errors} errors — check logs above.")
-        # Don't exit(1) — individual event failures shouldn't abort CI
+        if events_processed > 0 and errors > events_processed * 0.5:
+            logger.error(f"Error rate {errors}/{events_processed} exceeds 50% — exiting non-zero.")
+            sys.exit(2)
     else:
         logger.info("Completed successfully — no errors.")
 

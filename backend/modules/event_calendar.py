@@ -206,6 +206,10 @@ def load_all_events() -> list[MacroEvent]:
         event.surprise_score = compute_surprise_score(
             event, all_events, finnhub_key, consensus_df, finnhub_batch
         )
+        # Rate-limit Finnhub API calls: sleep 1s after each CPI event
+        if event.event_type == "CPI" and finnhub_key:
+            import time as _time
+            _time.sleep(1)
 
     # Log surprise score calculation statistics
     mpc_count = 0

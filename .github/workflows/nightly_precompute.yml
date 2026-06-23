@@ -8,6 +8,9 @@ on:
 jobs:
   precompute:
     runs-on: ubuntu-latest
+    concurrency:
+      group: nightly-precompute
+      cancel-in-progress: false   # let the running job finish
     timeout-minutes: 30       # Safety net — normal run is ~10 min
 
     steps:
