@@ -194,13 +194,18 @@ def load_all_events() -> list[MacroEvent]:
 
     # Compute surprise scores on the fly (oldest first for correct std/consensus propagation)
     # Lazy import to avoid circular dependency (surprise.py imports MacroEvent from this module)
-    from modules.surprise import compute_surprise_score
+    from modules.surprise import compute_surprise_score, fetch_finnhub_consensus_batch
     finnhub_key = os.getenv("FINNHUB_API_KEY", "")
     consensus_csv_path = DATA_DIR / "consensus.csv"
     consensus_df = pd.read_csv(consensus_csv_path) if consensus_csv_path.exists() else pd.DataFrame()
 
+    # Batch-fetch Finnhub consensus for all CPI events (1 HTTP call instead of N)
+    finnhub_batch = fetch_finnhub_consensus_batch(all_events, finnhub_key)
+
     for event in reversed(all_events):
-        event.surprise_score = compute_surprise_score(event, all_events, finnhub_key, consensus_df)
+        event.surprise_score = compute_surprise_score(
+            event, all_events, finnhub_key, consensus_df, finnhub_batch
+        )
 
     # Log surprise score calculation statistics
     mpc_count = 0

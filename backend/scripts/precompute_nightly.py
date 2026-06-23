@@ -429,33 +429,34 @@ def main() -> None:
     )
 
     # ------------------------------------------------------------------
-    # Step 6: Recompute all reaction points
+    # Step 6: Recompute reaction points
     # ------------------------------------------------------------------
     logger.info("Step 6: Recomputing reaction points...")
 
     # Filter to events with surprise scores only (CPI + IIP)
     surprise_events = [e for e in all_events if e.surprise_score is not None]
 
+    # NOTE: The Supabase reaction_points table PK is (event_id, asset, window).
+    # Only upsert the default window (T+2H) here to match the existing schema.
+    # Additional windows can be computed on-demand by the API layer.
     for asset in assets:
-        for window in ["T+30", "T+2H", "T+1D"]:
-            try:
-                points = build_reaction_points(surprise_events, asset, window)
-                if points:
-                    # Convert to dicts for Supabase upsert
-                    point_dicts = []
-                    for p in points:
-                        point_dicts.append({
-                            "event_id": p.event_id,
-                            "asset": p.asset,
-                            "window": window,
-                            "surprise_score": p.surprise_score,
-                            "reaction_pct": p.reaction_pct,
-                        })
-                    set_reaction_points(point_dicts)
-                    reaction_points_count += len(points)
-            except Exception as e:
-                logger.error(f"Error computing reaction points for {asset}/{window}: {e}")
-                errors += 1
+        try:
+            points = build_reaction_points(surprise_events, asset, "T+2H")
+            if points:
+                point_dicts = []
+                for p in points:
+                    point_dicts.append({
+                        "event_id": p.event_id,
+                        "asset": p.asset,
+                        "window": "T+2H",
+                        "surprise_score": p.surprise_score,
+                        "reaction_pct": p.reaction_pct,
+                    })
+                set_reaction_points(point_dicts)
+                reaction_points_count += len(points)
+        except Exception as e:
+            logger.error(f"Error computing reaction points for {asset}/T+2H: {e}")
+            errors += 1
 
     logger.info(f"Reaction points: {reaction_points_count} computed.")
 

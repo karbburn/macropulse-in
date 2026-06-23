@@ -57,14 +57,94 @@ def fetch_finnhub_consensus(event: MacroEvent, api_key: str) -> float | None:
         logger.warning(f"Failed to fetch Finnhub consensus: {e}")
         return None
 
-def get_consensus(event: MacroEvent, finnhub_key: str, consensus_df: pd.DataFrame) -> float | None:
+
+def fetch_finnhub_consensus_batch(
+    events: list[MacroEvent],
+    api_key: str,
+) -> dict[str, float]:
+    """
+    Fetch the Finnhub economic calendar once for the date range covering
+    all CPI events, then match locally. Returns {event_id: consensus}.
+
+    This replaces N individual HTTP calls with a single batch call.
+    """
+    if not api_key:
+        return {}
+
+    cpi_events = [e for e in events if e.event_type == "CPI"]
+    if not cpi_events:
+        return {}
+
+    # Determine date range
+    dates = [e.date for e in cpi_events]
+    from_date = min(dates).isoformat()
+    to_date = max(dates).isoformat()
+
+    url = "https://finnhub.io/api/v1/calendar/economic"
+    params = {
+        "from": from_date,
+        "to": to_date,
+        "token": api_key,
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=30)
+        if response.status_code != 200:
+            logger.warning(f"Finnhub batch API error: HTTP {response.status_code}")
+            return {}
+
+        data = response.json()
+        calendar = data.get("economicCalendar", [])
+
+        # Build a lookup: date_str -> consensus for India CPI events
+        date_to_consensus: dict[str, float] = {}
+        for item in calendar:
+            country = str(item.get("country", "")).upper()
+            event_name = str(item.get("event", "")).lower()
+            if country not in ("IN", "INDIA") or "cpi" not in event_name:
+                continue
+
+            event_date_str = item.get("date", "")
+            estimate = item.get("estimate") or item.get("forecast")
+            if event_date_str and estimate is not None:
+                try:
+                    date_to_consensus[event_date_str] = float(estimate)
+                except (ValueError, TypeError):
+                    pass
+
+        # Map event_id -> consensus
+        result: dict[str, float] = {}
+        for event in cpi_events:
+            if event.date.isoformat() in date_to_consensus:
+                result[event.id] = date_to_consensus[event.date.isoformat()]
+
+        logger.info(
+            f"Finnhub batch: matched consensus for {len(result)}/{len(cpi_events)} CPI events"
+        )
+        return result
+
+    except Exception as e:
+        logger.warning(f"Failed to fetch Finnhub batch consensus: {e}")
+        return {}
+
+def get_consensus(
+    event: MacroEvent,
+    finnhub_key: str,
+    consensus_df: pd.DataFrame,
+    finnhub_batch: dict[str, float] | None = None,
+) -> float | None:
     """
     Priority:
-    1. Finnhub (CPI only)
-    2. consensus.csv lookup by event_id
-    3. Return None
+    1. Finnhub batch lookup (pre-fetched, CPI only)
+    2. Finnhub single-event API call (CPI only, fallback)
+    3. consensus.csv lookup by event_id
+    4. Return None
     """
-    # 1. Finnhub (CPI only)
+    # 1. Finnhub batch lookup (pre-fetched)
+    if finnhub_batch and event.id in finnhub_batch:
+        return finnhub_batch[event.id]
+
+    # 2. Finnhub single-event API call (CPI only)
     if event.event_type == "CPI" and finnhub_key:
         val = fetch_finnhub_consensus(event, finnhub_key)
         if val is not None:
@@ -123,7 +203,8 @@ def compute_surprise_score(
     event: MacroEvent,
     all_events: list[MacroEvent],
     finnhub_key: str,
-    consensus_df: pd.DataFrame
+    consensus_df: pd.DataFrame,
+    finnhub_batch: dict[str, float] | None = None,
 ) -> float | None:
     """
     Full surprise score pipeline.
@@ -137,7 +218,7 @@ def compute_surprise_score(
 
     con = event.consensus
     if con is None:
-        con = get_consensus(event, finnhub_key, consensus_df)
+        con = get_consensus(event, finnhub_key, consensus_df, finnhub_batch)
     
     # IIP consensus is trailing 6-month mean actuals
     if event.event_type == "IIP" and con is None:
