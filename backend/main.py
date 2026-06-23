@@ -16,8 +16,10 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from modules.event_calendar import load_all_events, get_event_by_id, filter_events
+from modules.pdf_generator import generate_pdf
 from modules.market_snapshot import get_all_snapshots
 from modules.reaction import build_reaction_points, compute_regression
 from modules.event_study import compute_event_study
@@ -242,5 +244,53 @@ def get_study(
     return {
         "paths": [p.to_dict() for p in paths]
     }
+
+
+from fastapi.responses import StreamingResponse
+import io
+
+class ReportRequest(BaseModel):
+    event_ids: list[str]
+    assets: list[str]
+    include_scatter: bool
+    include_study: bool
+
+
+@app.post("/report")
+def generate_report(req: ReportRequest):
+    """
+    Generates and returns the macro impact PDF report.
+    """
+    if not req.event_ids:
+        raise HTTPException(status_code=400, detail="At least one event_id must be selected.")
+    if not req.assets:
+        raise HTTPException(status_code=400, detail="At least one asset class must be selected.")
+    
+    # Validate asset names
+    VALID_ASSETS = {"NIFTY", "USDINR", "VIX", "GSEC"}
+    invalid = [a for a in req.assets if a not in VALID_ASSETS]
+    if invalid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid assets: {invalid}. Must be one of {sorted(VALID_ASSETS)}."
+        )
+        
+    try:
+        pdf_bytes = generate_pdf(
+            event_ids=req.event_ids,
+            assets=req.assets,
+            include_scatter=req.include_scatter,
+            include_study=req.include_study
+        )
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=macro-impact-report-{date.today().isoformat()}.pdf"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error generating PDF report: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF report: {str(e)}")
 
 
