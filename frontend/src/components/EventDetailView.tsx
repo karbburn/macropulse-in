@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { EventDetail, MacroEvent } from '../lib/types';
-import SurpriseBadge from './Surprisebadge';
+import SurpriseBadge from './SurpriseBadge';
 import ReactionChart from './ReactionChart';
 
 interface EventDetailViewProps {

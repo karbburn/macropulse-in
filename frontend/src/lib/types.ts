@@ -17,11 +17,11 @@ export interface WindowData {
 }
 
 export interface AssetSnapshot {
-  'T-60': WindowData;
-  'T0': WindowData;
-  'T+30': WindowData;
-  'T+2H': WindowData;
-  'T+1D': WindowData;
+  'T-60'?: WindowData;
+  'T0'?: WindowData;
+  'T+30'?: WindowData;
+  'T+2H'?: WindowData;
+  'T+1D'?: WindowData;
 }
 
 export interface EventDetail {
@@ -56,7 +56,7 @@ export interface ScatterResponse {
 export interface EventStudyPath {
   decision_type: 'hike' | 'cut' | 'hold';
   asset: string;
-  days: number[];
+  days: [-2, -1, 0, 1, 2];
   mean_indexed: number[];
   upper_band: number[];
   lower_band: number[];

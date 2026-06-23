@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   description: "Analyze Indian macroeconomic event impacts on financial markets.",
 };
 
+export const viewport = {
+  themeColor: '#1a1a1a',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,12 +67,6 @@ export default function RootLayout({
                     Report Builder
                   </Link>
                 </nav>
-              </div>
-              <div className="hidden sm:flex items-center gap-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Connected
-                </span>
               </div>
             </div>
           </div>
