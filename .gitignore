@@ -1,8 +1,5 @@
-# Reference Files & Spec documentation (Not required for public github repo)
-/Reference files/
-**/AGENTS.md
-**/agents.md
-**/Agents.md
+# assets
+/assets/
 
 # Generated reports & logs
 *.pdf
