@@ -51,8 +51,8 @@ logger = logging.getLogger("precompute_nightly")
 from modules.event_calendar import (
     MacroEvent,
     load_all_events,
-    _events_cache,
 )
+import modules.event_calendar as ec
 from modules.market_snapshot import (
     TICKERS,
     get_snapshot_with_cache,
@@ -185,8 +185,9 @@ def _fetch_new_cpi_from_finnhub() -> list[dict]:
     try:
         import requests
         # Look back 90 days and forward 30 days
-        from_date = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
-        to_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        now = datetime.now(timezone.utc)
+        from_date = (now - timedelta(days=90)).strftime("%Y-%m-%d")
+        to_date = (now + timedelta(days=30)).strftime("%Y-%m-%d")
 
         url = "https://finnhub.io/api/v1/calendar/economic"
         params = {
@@ -311,7 +312,6 @@ def main() -> None:
     logger.info("Step 1: Loading events from CSV files...")
     try:
         # Force fresh load by clearing module-level cache
-        import modules.event_calendar as ec
         ec._events_cache = None
 
         all_events = load_all_events()

@@ -26,19 +26,21 @@ _supabase_client = None
 _init_attempted = False
 
 
-def _get_supabase_client() -> Any:
+def _get_supabase_client(max_retries: int = 3) -> Any:
     """
     Lazily initialise and return the Supabase client.
 
-    Returns None if env vars are missing or the connection fails.
-    Logs the reason exactly once so the log doesn't flood.
+    Returns None if env vars are missing or the connection fails
+    after max_retries attempts. Retries with 2-second delays for
+    transient failures (e.g., brief network outages).
     """
     global _supabase_client, _init_attempted
 
-    if _init_attempted:
-        return _supabase_client          # already tried — return whatever we got
+    if _supabase_client is not None:
+        return _supabase_client
 
-    _init_attempted = True
+    if _init_attempted:
+        return None
 
     url = os.environ.get("SUPABASE_URL", "").strip()
     key = os.environ.get("SUPABASE_KEY", "").strip()
@@ -48,17 +50,29 @@ def _get_supabase_client() -> Any:
             "SUPABASE_URL and/or SUPABASE_KEY not set — "
             "caching disabled; all data will be computed on the fly."
         )
+        _init_attempted = True
         return None
 
-    try:
-        from supabase import create_client  # type: ignore
-        _supabase_client = create_client(url, key)
-        logger.info("Supabase client initialised successfully.")
-    except Exception as e:
-        logger.error(f"Failed to initialise Supabase client: {e}")
-        _supabase_client = None
+    import time as _time
 
-    return _supabase_client
+    for attempt in range(1, max_retries + 1):
+        try:
+            from supabase import create_client  # type: ignore
+            _supabase_client = create_client(url, key)
+            _init_attempted = True
+            logger.info("Supabase client initialised successfully.")
+            return _supabase_client
+        except Exception as e:
+            logger.warning(
+                f"Supabase init attempt {attempt}/{max_retries} failed: {e}"
+            )
+            if attempt < max_retries:
+                _time.sleep(2)
+
+    logger.error("Failed to initialise Supabase client after all retries.")
+    _init_attempted = True
+    _supabase_client = None
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -138,11 +152,15 @@ def get_reaction_points(asset: str, event_type: str) -> list[dict]:
             .select("*")
             .eq("asset", asset)
         )
-        if event_type and event_type.lower() != "all":
-            query = query.eq("event_type", event_type.upper())
 
         response = query.execute()
-        return response.data if response.data else []
+        data = response.data if response.data else []
+
+        # Filter by event_type in Python (the event_type column may not exist in Supabase)
+        if event_type and event_type.lower() != "all":
+            data = [r for r in data if r["event_id"].startswith(event_type.upper())]
+
+        return data
     except Exception as e:
         logger.error(f"Error reading reaction points ({asset}/{event_type}): {e}")
         return []
