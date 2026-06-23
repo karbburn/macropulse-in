@@ -25,7 +25,9 @@ jobs:
           cache-dependency-path: 'backend/requirements.txt'
 
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt
+        run: |
+          pip install -r backend/requirements.txt
+          pip install --no-deps yfinance==1.4.1
 
       - name: Run nightly precompute
         run: python backend/scripts/precompute_nightly.py
