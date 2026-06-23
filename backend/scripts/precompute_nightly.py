@@ -448,7 +448,6 @@ def main() -> None:
                     point_dicts.append({
                         "event_id": p.event_id,
                         "asset": p.asset,
-                        "window": "T+2H",
                         "surprise_score": p.surprise_score,
                         "reaction_pct": p.reaction_pct,
                     })
