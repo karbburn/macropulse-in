@@ -12,7 +12,8 @@ Steps:
 5. For each event without a cached snapshot (or snapshot > 25hr old):
    compute all 4 asset snapshots → upsert to Supabase
 6. Recompute all reaction_points → upsert to Supabase
-7. Print summary: N events processed, M snapshots updated, K errors
+7. Precompute event study paths (hike/cut/hold × 4 assets) → cache to Supabase
+8. Print summary: N events processed, M snapshots updated, K errors
 
 Error handling: catch all exceptions per event, log, continue.
 Never let one failed event abort the entire job.
@@ -59,6 +60,7 @@ from modules.market_snapshot import (
     _compute_snapshot,
 )
 from modules.reaction import build_reaction_points
+from modules.event_study import compute_event_study
 from modules.cache import (
     _get_supabase_client,
     get_cached_snapshot,
@@ -460,7 +462,31 @@ def main() -> None:
     logger.info(f"Reaction points: {reaction_points_count} computed.")
 
     # ------------------------------------------------------------------
-    # Step 7: Summary
+    # Step 7: Precompute event study paths
+    # ------------------------------------------------------------------
+    logger.info("Step 7: Precomputing event study paths...")
+    study_paths_count = 0
+
+    # Only MPC events are used for event study
+    mpc_events = [e for e in all_events if e.event_type == "MPC"]
+    decision_types = ["hike", "cut", "hold"]
+
+    for asset in assets:
+        try:
+            paths = compute_event_study(mpc_events, asset, decision_types)
+            study_paths_count += len(paths)
+            logger.info(
+                f"  {asset}: {len(paths)} study paths computed "
+                f"({', '.join(f'{p.decision_type}(N={p.event_count})' for p in paths)})"
+            )
+        except Exception as e:
+            logger.error(f"Error computing event study for {asset}: {e}")
+            errors += 1
+
+    logger.info(f"Event study paths: {study_paths_count} computed.")
+
+    # ------------------------------------------------------------------
+    # Step 8: Summary
     # ------------------------------------------------------------------
     elapsed = time_module.time() - start_time
     elapsed_min = elapsed / 60.0
@@ -473,6 +499,7 @@ def main() -> None:
     logger.info(f"  Snapshots computed:      {snapshots_computed}")
     logger.info(f"  Snapshots skipped:       {snapshots_skipped}")
     logger.info(f"  Reaction points:         {reaction_points_count}")
+    logger.info(f"  Event study paths:       {study_paths_count}")
     logger.info(f"  Errors:                  {errors}")
     logger.info(f"  Elapsed time:            {elapsed_min:.1f} minutes")
     logger.info("=" * 60)
