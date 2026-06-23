@@ -15,6 +15,8 @@ from datetime import date, time
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 # Resolve data directory relative to this module
@@ -40,6 +42,10 @@ class MacroEvent:
         result["date"] = self.date.isoformat()
         result["time"] = self.time.isoformat() if self.time else None
         return result
+
+
+# Module-level cache for load_all_events to avoid blocking Finnhub API calls on every request
+_events_cache: list[MacroEvent] | None = None
 
 
 def _parse_time(time_str: str) -> time | None:
@@ -168,9 +174,15 @@ def load_all_events() -> list[MacroEvent]:
     """
     Load MPC from CSV, CPI/IIP from consensus CSV, merge, sort by date descending.
 
+    Uses a module-level cache to avoid redundant Finnhub API calls on every request.
+
     Returns:
         Sorted list of all MacroEvent objects, newest first.
     """
+    global _events_cache
+    if _events_cache is not None:
+        return _events_cache
+
     mpc_events = _load_mpc_events()
     consensus_events = _load_consensus_events()
 
@@ -181,10 +193,8 @@ def load_all_events() -> list[MacroEvent]:
                 f"(MPC: {len(mpc_events)}, CPI/IIP: {len(consensus_events)})")
 
     # Compute surprise scores on the fly (oldest first for correct std/consensus propagation)
+    # Lazy import to avoid circular dependency (surprise.py imports MacroEvent from this module)
     from modules.surprise import compute_surprise_score
-    import pandas as pd
-    import os
-
     finnhub_key = os.getenv("FINNHUB_API_KEY", "")
     consensus_csv_path = DATA_DIR / "consensus.csv"
     consensus_df = pd.read_csv(consensus_csv_path) if consensus_csv_path.exists() else pd.DataFrame()
@@ -226,6 +236,7 @@ def load_all_events() -> list[MacroEvent]:
         f"  - IIP events missing actual: {iip_no_score_actual}"
     )
 
+    _events_cache = all_events
     return all_events
 
 
