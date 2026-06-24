@@ -131,7 +131,7 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
       <div className="sticky top-0 md:top-[56px] z-40 bg-bg-base/90 backdrop-blur-md py-3 border-b border-border-subtle/40 mb-8">
         <div className="flex items-center justify-between gap-4 w-full">
           <FilterTabs active={activeTab} onChange={(tab) => setActiveTab(tab as TabType)} />
-          <div className="font-mono text-xs text-text-tertiary tracking-wide hidden sm:block">
+            <div className="font-body text-xs text-text-tertiary tracking-widest hidden sm:block">
             RANGE: 2018 – 2026 • ALL TIME
           </div>
         </div>
@@ -177,10 +177,9 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
               animate="visible"
               className="relative"
             >
-              {/* Year Divider with Horizontal Rules */}
+              {/* Year Divider — left-aligned with extending rule */}
               <div className="flex items-center gap-4 my-8">
-                <hr className="flex-1 border-border-subtle/60" />
-                <span className="font-display text-2xl text-text-tertiary select-none">
+                <span className="font-display text-2xl text-text-tertiary select-none shrink-0">
                   {year}
                 </span>
                 <hr className="flex-1 border-border-subtle/60" />

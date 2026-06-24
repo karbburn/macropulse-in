@@ -191,7 +191,7 @@ export default function ReportPage() {
         {/* Main Columns: Event Picker & Configurations */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
           {/* STEP 1: Left Panel — Event Picker (60% split / 7 cols) */}
-          <div className="lg:col-span-7 rounded-[4px] border border-border-subtle bg-bg-surface p-5 md:p-6 flex flex-col gap-4 max-h-[60vh] hover:border-border-strong transition-colors">
+          <div className="lg:col-span-7 rounded-[4px] border border-border-subtle bg-bg-surface p-5 md:p-6 flex flex-col gap-4 max-h-[65vh] hover:border-border-strong transition-colors">
             <div className="flex flex-col gap-1">
               <h3 className="font-body text-sm font-semibold text-text-primary uppercase tracking-wider">
                 Select Timeline Events

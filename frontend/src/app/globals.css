@@ -290,6 +290,7 @@ body::after {
 
 .ticker-track {
   display: flex;
+  width: max-content;
   animation: ticker-scroll 30s linear infinite;
 }
 
