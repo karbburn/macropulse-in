@@ -1,45 +1,55 @@
+'use client';
+
 import React from 'react';
+import { motion } from 'framer-motion';
+import { scaleVariants, useSafeVariants } from '../lib/motion';
 
 interface SurpriseBadgeProps {
   score: number | null;
 }
 
 export default function SurpriseBadge({ score }: SurpriseBadgeProps) {
+  const safeScaleVariants = useSafeVariants(scaleVariants);
+
   if (score === null || score === undefined) {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-1 text-xs font-medium text-neutral-400 ring-1 ring-inset ring-neutral-700 font-mono">
-        Surprise: --
-      </span>
+      <motion.span
+        variants={safeScaleVariants}
+        initial="hidden"
+        animate="visible"
+        className="inline-flex items-center gap-1 rounded-full border-[1.5px] border-border-strong bg-bg-surface px-2.5 py-1 text-xs text-text-tertiary font-mono"
+      >
+        —
+      </motion.span>
     );
   }
 
   const absScore = Math.abs(score);
-  const formattedScore = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
+  const formattedScore = `${absScore.toFixed(1)}σ`;
+  const isPositive = score > 0;
+  const symbol = isPositive ? '▲' : '▼';
 
-  let bgClass = '';
-  let textClass = '';
-  let ringClass = '';
+  let badgeStyles = '';
 
   if (absScore < 0.5) {
-    // Green = low surprise
-    bgClass = 'bg-emerald-500/10';
-    textClass = 'text-emerald-400';
-    ringClass = 'ring-emerald-500/20';
+    // Low surprise: green
+    badgeStyles = 'border-[var(--surprise-low)] bg-[var(--positive-dim)] text-[var(--surprise-low)]';
   } else if (absScore <= 1.5) {
-    // Yellow = moderate surprise
-    bgClass = 'bg-amber-500/10';
-    textClass = 'text-amber-400';
-    ringClass = 'ring-amber-500/20';
+    // Mild surprise: brass
+    badgeStyles = 'border-[var(--surprise-mid)] bg-[rgba(196,154,60,0.15)] text-[var(--surprise-mid)]';
   } else {
-    // Red = high surprise
-    bgClass = 'bg-rose-500/10';
-    textClass = 'text-rose-400';
-    ringClass = 'ring-rose-500/20';
+    // Large surprise: red
+    badgeStyles = 'border-[var(--surprise-high)] bg-[var(--negative-dim)] text-[var(--surprise-high)]';
   }
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold ring-1 ring-inset font-mono ${bgClass} ${textClass} ${ringClass}`}>
-      Surprise: {formattedScore}
-    </span>
+    <motion.span
+      variants={safeScaleVariants}
+      initial="hidden"
+      animate="visible"
+      className={`inline-flex items-center gap-1 rounded-full border-[1.5px] px-2.5 py-1 text-xs font-mono ${badgeStyles}`}
+    >
+      {symbol} {formattedScore}
+    </motion.span>
   );
 }
