@@ -69,7 +69,6 @@ export default function ReactionTable({ snapshots }: ReactionTableProps) {
           {ASSET_ROWS.map((row, index) => {
             const snapshot = snapshots[row.key];
             
-            // Stagger rows 40ms apart, starting at 600ms to align with cinematic entrance sequence
             const rowTransition = {
               duration: reduce ? 0.01 : 0.3,
               ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
@@ -85,7 +84,6 @@ export default function ReactionTable({ snapshots }: ReactionTableProps) {
                 transition={rowTransition}
                 className="hover:bg-bg-elevated transition-colors group"
               >
-                {/* Asset Description */}
                 <td className="py-4 pr-4">
                   <span className="font-body text-sm font-semibold text-text-secondary group-hover:text-[var(--accent-primary)] transition-colors">
                     {row.name}
@@ -95,23 +93,18 @@ export default function ReactionTable({ snapshots }: ReactionTableProps) {
                   </span>
                 </td>
 
-                {/* T-60 (always baseline "-") */}
                 <td className="py-4 px-4 text-right">
                   <span className="text-text-tertiary font-mono text-sm">-</span>
                 </td>
 
-
-                {/* T+30 */}
                 <td className="py-4 px-4 text-right">
                   {renderValueCell(snapshot?.['T+30']?.pct_change_from_T60 ?? null)}
                 </td>
 
-                {/* T+2H */}
                 <td className="py-4 px-4 text-right">
                   {renderValueCell(snapshot?.['T+2H']?.pct_change_from_T60 ?? null)}
                 </td>
 
-                {/* T+1D */}
                 <td className="py-4 pl-4 text-right">
                   {renderValueCell(snapshot?.['T+1D']?.pct_change_from_T60 ?? null)}
                 </td>

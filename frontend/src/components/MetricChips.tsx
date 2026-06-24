@@ -36,15 +36,10 @@ export default function MetricChips({ snapshots }: MetricChipsProps) {
         
         let pctChange = t1dData?.pct_change_from_T60 ?? null;
 
-        // Determine formatting and color coding
         let pctColorClass = 'text-text-secondary';
         let formattedValue = '-';
 
-
         if (pctChange !== null && pctChange !== undefined) {
-          // Convert fraction to percentage if it's not already in percentage form
-          // Note: In the existing database/types, pct_change_from_T60 is already formatted as percentage (e.g. 0.34 for 0.34%)
-          // Let's format it to 2 decimal places.
           const isPos = pctChange > 0.0001;
           const isNeg = pctChange < -0.0001;
           
@@ -66,17 +61,14 @@ export default function MetricChips({ snapshots }: MetricChipsProps) {
             variants={safeChip}
             className="rounded-[4px] border border-border-subtle bg-bg-surface p-4 flex flex-col justify-between h-[90px] transition-colors hover:bg-bg-elevated"
           >
-            {/* Asset Name */}
             <span className="font-body text-xs font-semibold tracking-wider text-text-secondary uppercase">
               {metadata.label}
             </span>
 
-            {/* % Value */}
             <span className={`font-mono text-xl font-bold tracking-tight tabular-nums leading-none my-1 ${pctColorClass}`}>
               {formattedValue}
             </span>
 
-            {/* vs T-60 label */}
             <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
               vs T-60 baseline
             </span>

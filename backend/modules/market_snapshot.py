@@ -35,7 +35,7 @@ _session.headers.update({
 
 
 # --------------------------------------------------------------------------- #
-#  Constants (from TechSpec Section 5.1 & Claude Guide Stage 2)
+#  Constants
 # --------------------------------------------------------------------------- #
 
 TICKERS: dict[str, str] = {

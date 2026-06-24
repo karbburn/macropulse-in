@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { MacroEvent } from '../lib/types';
+import { formatOutcome, formatEventDate } from '../lib/format';
 import SurpriseBadge from './SurpriseBadge';
 import { itemVariants, useSafeVariants } from '../lib/motion';
 
@@ -34,8 +35,7 @@ function getDeterministicReactions(event: MacroEvent) {
       vix = -1.5;
     }
   } else {
-    // Generate a deterministic hash based on event id for a stable fallback seed
-    let hash = 0;
+  let hash = 0;
     for (let i = 0; i < event.id.length; i++) {
       hash = event.id.charCodeAt(i) + ((hash << 5) - hash);
     }
@@ -64,7 +64,6 @@ function getDeterministicReactions(event: MacroEvent) {
     }
   }
 
-  // Ensure small non-zero fallbacks for display precision
   return {
     nifty: nifty === 0 ? 0.02 : nifty,
     usdinr: usdinr === 0 ? -0.01 : usdinr,
@@ -85,42 +84,10 @@ const formatPct = (val: number) => {
   return val >= 0 ? `+${formatted}%` : `${formatted}%`;
 };
 
-const formatOutcome = (event: MacroEvent) => {
-  if (event.event_type === 'MPC') {
-    const outcome = event.outcome?.toLowerCase() || '';
-    if (outcome.includes('hike')) {
-      const bps = outcome.split('+')[1] || '25';
-      return `Rate Hike (+${bps} bps)`;
-    } else if (outcome.includes('cut')) {
-      const bps = outcome.split('-')[1] || '25';
-      return `Rate Cut (-${bps} bps)`;
-    } else if (outcome === 'hold') {
-      return 'Policy Repo Rate Held';
-    }
-    return event.outcome || 'Policy Decision';
-  } else if (event.event_type === 'CPI') {
-    return `CPI Inflation at ${event.actual !== null ? event.actual.toFixed(2) : '--'}%`;
-  } else if (event.event_type === 'IIP') {
-    return `Industrial Production Growth at ${event.actual !== null ? event.actual.toFixed(2) : '--'}%`;
-  }
-  return event.outcome || 'Macro Event';
-};
-
-const formatEventDate = (dateStr: string) => {
-  try {
-    const d = new Date(dateStr);
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
-  } catch {
-    return dateStr;
-  }
-};
-
 export default function EventCard({ event }: EventCardProps) {
   const safeItemVariants = useSafeVariants(itemVariants);
   const reactions = getDeterministicReactions(event);
 
-  // Accent colors based on event type
   let accentBorderClass = '';
   switch (event.event_type) {
     case 'MPC':
@@ -159,14 +126,12 @@ export default function EventCard({ event }: EventCardProps) {
         </div>
       </div>
 
-      {/* Middle: Outcome Title */}
       <div className="mb-2">
         <h3 className="font-display italic text-md text-text-primary leading-snug">
           {formatOutcome(event)}
         </h3>
       </div>
 
-      {/* Notes Sub-line */}
       {event.notes && (
         <div className="mb-4">
           <p className="font-body text-sm text-text-secondary leading-normal line-clamp-2">
@@ -175,7 +140,6 @@ export default function EventCard({ event }: EventCardProps) {
         </div>
       )}
 
-      {/* Bottom Row: Reactions and Arrow */}
       <div className="flex items-center justify-between gap-4 border-t border-border-subtle/40 pt-3 mt-auto">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-mono tabular">
           <div className="flex items-center gap-1.5">
@@ -200,7 +164,6 @@ export default function EventCard({ event }: EventCardProps) {
           </div>
         </div>
 
-        {/* Chevron Arrow slides right on hover */}
         <div className="text-text-secondary transition-transform duration-150 ease-out group-hover:translate-x-1 group-hover:text-text-primary">
           <ChevronRight size={14} strokeWidth={1.5} className="arrow-icon" />
         </div>

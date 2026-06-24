@@ -42,7 +42,6 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
   const safeItemVariants = useSafeVariants(itemVariants);
   const safeBannerVariants = useSafeVariants(bannerVariants);
 
-  // Client-side backend warming check to wake Render free tier if needed
   useEffect(() => {
     const checkBackendHealth = async () => {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -59,12 +58,10 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
         }
         setHasLoaded(true);
       } catch (err) {
-        // Server is likely cold or unreachable
         setIsWarming(true);
         try {
           await wakeBackend();
           setIsWarming(false);
-          // Refetch the events on the client once the server is awake
           const eventsRes = await fetch(`${baseUrl}/events?limit=100`, { cache: 'no-store' });
           if (eventsRes.ok) {
             const data = await eventsRes.json();
@@ -84,13 +81,11 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
     checkBackendHealth();
   }, []);
 
-  // Filter events based on active tab
   const filteredEvents = events.filter((e) => {
     if (activeTab === 'ALL') return true;
     return e.event_type === activeTab;
   });
 
-  // Group events by year
   const groupedEvents: { [key: string]: MacroEvent[] } = {};
   filteredEvents.forEach((e) => {
     const year = e.date.substring(0, 4);
@@ -100,7 +95,6 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
     groupedEvents[year].push(e);
   });
 
-  // Sort years descending
   const sortedYears = Object.keys(groupedEvents).sort((a, b) => b.localeCompare(a));
 
   const isLoading = !hasLoaded && !errorMsg && !initialError;

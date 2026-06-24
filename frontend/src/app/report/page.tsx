@@ -146,14 +146,13 @@ export default function ReportPage() {
       const message =
         err instanceof Error
           ? err.message
-          : 'Failed to connect to the PDF generator backend endpoint. Ensure Stage 6 Backend PDF module is implemented.';
+          :           'Failed to connect to the PDF generator backend endpoint.';
       setErrorMsg(message);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Estimate PDF page count dynamically
   const estPages = Math.ceil(
     1 + selectedEventIds.length * 0.5 + (includeReaction ? 1 : 0) + (includeScatter ? 1 : 0) + (includeStudy ? 1 : 0)
   );
@@ -161,7 +160,7 @@ export default function ReportPage() {
   return (
     <PageWrapper>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex flex-col gap-6 md:gap-8">
-        {/* Title / Header */}
+        {/* Title */}
         <div className="flex flex-col gap-2 text-left">
           <h1 className="font-display text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
             PDF Report <span className="text-[var(--accent-primary)] font-display italic">Builder</span>
@@ -171,7 +170,7 @@ export default function ReportPage() {
           </p>
         </div>
 
-        {/* Action Notifications */}
+        {/* Notifications */}
         {errorMsg && (
           <div
             className="rounded-[4px] border border-border-strong p-4 text-xs font-body text-[var(--negative)]"
@@ -190,7 +189,7 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* Main Columns: Event Picker & Configurations */}
+        {/* Main Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
           {/* STEP 1: Left Panel — Event Picker (60% split / 7 cols) */}
           <div className="lg:col-span-7 rounded-[4px] border border-border-subtle bg-bg-surface p-5 md:p-6 flex flex-col gap-4 max-h-[65vh] hover:border-border-strong transition-colors">
@@ -274,7 +273,7 @@ export default function ReportPage() {
                                 : 'border-l-transparent'
                             }`}
                           >
-                            {/* Custom CSS-only Checkbox */}
+                            {/* Custom Checkbox */}
                             <div className="relative flex items-center mt-0.5">
                               <input
                                 id={`chk-${event.id}`}

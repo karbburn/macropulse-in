@@ -25,7 +25,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
   const isMobile = useIsMobile();
   const reduce = useReducedMotion();
 
-  // Check if we have snapshot data
   const hasSnapshots =
     snapshots &&
     Object.values(snapshots).some((val) => val !== null && val !== undefined);
@@ -38,16 +37,13 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
     );
   }
 
-  // Windows in chronological order
   const windowKeys = ['T-60', 'T0', 'T+30', 'T+2H', 'T+1D'] as const;
 
-  // Prepare data for Recharts
   const chartData = windowKeys.map((window) => {
     const point: { name: string; [key: string]: number | string | null } = {
       name: window,
     };
 
-    // Populate each asset's percentage change relative to T-60
     (Object.keys(snapshots) as Array<keyof typeof snapshots>).forEach((asset) => {
       const assetSnap = snapshots[asset];
       if (assetSnap && assetSnap[window]) {
@@ -68,7 +64,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
     { key: 'GSEC', name: '10Y G-Sec', color: 'var(--chart-gsec)' },
   ];
 
-  // Custom Tooltip component meeting design requirements
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -116,7 +111,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
             data={chartData}
             margin={{ top: 10, right: 10, left: -15, bottom: 5 }}
           >
-            {/* Grid specs from prompt */}
             <CartesianGrid 
               strokeDasharray="3 3" 
               stroke="var(--border-subtle)" 
@@ -124,7 +118,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               vertical={false} 
             />
 
-            {/* X-axis specs from prompt */}
             <XAxis
               dataKey="name"
               tickLine={false}
@@ -137,7 +130,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               }}
             />
 
-            {/* Y-axis specs from prompt */}
             <YAxis
               tickLine={false}
               axisLine={false}
@@ -153,7 +145,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               domain={['auto', 'auto']}
             />
 
-            {/* Zero reference line specs from prompt */}
             <ReferenceLine 
               y={0} 
               stroke="var(--border-strong)" 
@@ -166,7 +157,6 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }}
             />
 
-            {/* Legend specs from prompt */}
             <Legend
               iconType="rect"
               iconSize={10}
@@ -188,9 +178,7 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               }}
             />
 
-            {/* One Line per asset */}
             {assetConfigs.map((asset) => {
-              // Draw line if snapshots has asset data
               const hasData = snapshots[asset.key] !== null && snapshots[asset.key] !== undefined;
               if (!hasData) return null;
 

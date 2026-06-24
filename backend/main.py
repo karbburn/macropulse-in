@@ -2,7 +2,7 @@
 MacroPulse — FastAPI Backend
 Main application entry point with route registration.
 
-Endpoints (Stage 1 + 2 + 3 + 4):
+Endpoints:
   GET /health          — Health check
   GET /events          — List all events with optional filters
   GET /events/{id}     — Get single event by ID + market snapshots
@@ -32,28 +32,24 @@ from modules.reaction import build_reaction_points, compute_regression
 from modules.event_study import compute_event_study
 from modules.live_rates import get_latest_repo_rate, get_latest_cpi, get_latest_iip, get_latest_nifty
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Preload events cache on server start to avoid cold-start latency."""
-    import threading
-    threading.Thread(target=load_all_events, daemon=True).start()
-
-
-
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
 app = FastAPI(
     title="MacroPulse — India Edition",
     description="API for tracking Indian macro event impacts on financial markets.",
     version="1.0",
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Preload events cache on server start to avoid cold-start latency."""
+    import threading
+    threading.Thread(target=load_all_events, daemon=True).start()
 
 # CORS middleware — locked to Vercel frontend + local dev
 app.add_middleware(
