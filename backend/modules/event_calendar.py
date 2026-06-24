@@ -172,9 +172,10 @@ def _load_consensus_events() -> list[MacroEvent]:
 
 def load_all_events() -> list[MacroEvent]:
     """
-    Load MPC from CSV, CPI/IIP from consensus CSV, merge, sort by date descending.
+    Load MPC from CSV, CPI/IIP from Supabase (falling back to CSV if offline),
+    merge, sort by date descending.
 
-    Uses a module-level cache to avoid redundant Finnhub API calls on every request.
+    Uses a module-level cache to avoid redundant Supabase and Finnhub API calls on every request.
 
     Returns:
         Sorted list of all MacroEvent objects, newest first.
@@ -183,8 +184,58 @@ def load_all_events() -> list[MacroEvent]:
     if _events_cache is not None:
         return _events_cache
 
+    # 1. Load MPC events from local CSV (always local source of truth)
     mpc_events = _load_mpc_events()
-    consensus_events = _load_consensus_events()
+
+    # 2. Try to load CPI/IIP events from Supabase
+    consensus_events = []
+    loaded_from_supabase = False
+
+    try:
+        from modules.cache import _get_supabase_client
+        client = _get_supabase_client()
+        if client is not None:
+            response = client.table("events").select("*").execute()
+            if response.data:
+                for row in response.data:
+                    # Skip MPC events in Supabase if they are loaded from local CSV,
+                    # to keep CSV as the single source of truth for MPC.
+                    if row.get("event_type") == "MPC":
+                        continue
+                    
+                    event_date = date.fromisoformat(row["date"])
+                    actual = row.get("actual")
+                    if actual is not None:
+                        actual = float(actual)
+                    consensus = row.get("consensus")
+                    if consensus is not None:
+                        consensus = float(consensus)
+                    surprise_score = row.get("surprise_score")
+                    if surprise_score is not None:
+                        surprise_score = float(surprise_score)
+
+                    event = MacroEvent(
+                        id=row["id"],
+                        event_type=row["event_type"],
+                        date=event_date,
+                        time=_parse_time(row.get("time") or ""),
+                        outcome=row.get("outcome"),
+                        actual=actual,
+                        consensus=consensus,
+                        surprise_score=surprise_score,
+                        notes=row.get("notes"),
+                    )
+                    consensus_events.append(event)
+                loaded_from_supabase = True
+                logger.info(f"Loaded {len(consensus_events)} CPI/IIP events from Supabase.")
+    except Exception as e:
+        logger.warning(f"Failed to load events from Supabase: {e}. Falling back to local CSV.")
+        consensus_events = []
+
+    # 3. Fallback to local CSV if Supabase failed or returned no events
+    if not loaded_from_supabase or not consensus_events:
+        logger.info("Falling back to local consensus.csv for CPI/IIP events.")
+        consensus_events = _load_consensus_events()
 
     all_events = mpc_events + consensus_events
     all_events.sort(key=lambda e: e.date, reverse=True)
@@ -192,8 +243,8 @@ def load_all_events() -> list[MacroEvent]:
     logger.info(f"Total events loaded: {len(all_events)} "
                 f"(MPC: {len(mpc_events)}, CPI/IIP: {len(consensus_events)})")
 
-    # Compute surprise scores on the fly (oldest first for correct std/consensus propagation)
-    # Lazy import to avoid circular dependency (surprise.py imports MacroEvent from this module)
+    # 4. Compute surprise scores on the fly for any events missing them
+    # (oldest first for correct std/consensus propagation)
     from modules.surprise import compute_surprise_score, fetch_finnhub_consensus_batch
     finnhub_key = os.getenv("FINNHUB_API_KEY", "")
     consensus_csv_path = DATA_DIR / "consensus.csv"
@@ -203,13 +254,15 @@ def load_all_events() -> list[MacroEvent]:
     finnhub_batch = fetch_finnhub_consensus_batch(all_events, finnhub_key)
 
     for event in reversed(all_events):
-        event.surprise_score = compute_surprise_score(
-            event, all_events, finnhub_key, consensus_df, finnhub_batch
-        )
-        # Rate-limit Finnhub API calls: sleep 1s after each CPI event
-        if event.event_type == "CPI" and finnhub_key:
-            import time as _time
-            _time.sleep(1)
+        # Only compute on the fly if surprise_score is not already set
+        if event.surprise_score is None:
+            event.surprise_score = compute_surprise_score(
+                event, all_events, finnhub_key, consensus_df, finnhub_batch
+            )
+            # Rate-limit Finnhub API calls: sleep 1s after each CPI event
+            if event.event_type == "CPI" and finnhub_key:
+                import time as _time
+                _time.sleep(1)
 
     # Log surprise score calculation statistics
     mpc_count = 0
@@ -247,7 +300,6 @@ def load_all_events() -> list[MacroEvent]:
 
     _events_cache = all_events
     return all_events
-
 
 
 def get_event_by_id(event_id: str) -> MacroEvent | None:

@@ -107,3 +107,25 @@ IIP-2024-07-12,IIP,2024-07-12,5.90,,unknown,"IIP for May 2024; consensus unavail
 | MoSPI IIP Releases | https://mospi.gov.in/ | Monthly IIP actual values |
 | Reuters | https://www.reuters.com/markets/asia/ | Pre-release consensus polls |
 | RBI SPF | https://www.rbi.org.in/Scripts/PublicationsView.aspx?id=21578 | Quarterly professional forecaster surveys |
+
+---
+
+## CPI and IIP Data Sources
+
+### Automatic (nightly job)
+- MOSPI scraper attempts to fetch latest CPI and IIP release on each nightly run
+- Falls back to RBI DBIE CSV if MOSPI scraping fails
+- Source is logged: "mospi" or "rbi_dbie"
+
+### Manual seed (run once, or when CSVs are stale)
+1. Go to https://dbie.rbi.org.in
+2. Download CPI Combined All India → save as backend/data/rbi_dbie_cpi_raw.csv
+3. Download IIP General Index → save as backend/data/rbi_dbie_iip_raw.csv
+4. Columns needed: date (YYYY-MM-DD), cpi_index or cpi_yoy, iip_index or iip_yoy
+5. Run precompute_nightly.py manually to re-seed Supabase
+
+### data.gov.in
+- DATAGOV_API_KEY is kept as PLACEHOLDER
+- Will be wired in when API access is obtained
+- No functionality depends on it currently
+

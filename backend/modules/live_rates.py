@@ -5,6 +5,8 @@ import pandas as pd
 import yfinance as yf
 import time
 from pathlib import Path
+from modules import rbi_dbie
+
 
 logger = logging.getLogger(__name__)
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -32,59 +34,47 @@ def get_latest_repo_rate() -> dict:
     }
 
 
+from modules.event_calendar import load_all_events
+
 def get_latest_cpi() -> dict:
     """
-    Read consensus.csv, filter for event_type == CPI, return most recent actual.
-    
-    consensus.csv has columns:
-      event_id, event_type, date, actual_value, consensus_value, source, notes
-    
-    event_id format: CPI-YYYY-MM-DD
-    Extract date from event_id, sort descending, take first row.
-    
-    Return: { "actual": 4.88, "date": "2024-06-12" }
-    If no CPI rows exist, return { "actual": null, "date": null }
+    Return the most recent CPI actual from Supabase (via load_all_events),
+    falling back to RBI DBIE CSV.
     """
-    df = pd.read_csv(DATA_DIR / "consensus.csv")
-    cpi = df[df["event_type"] == "CPI"].copy()
-    if cpi.empty:
-        return {"actual": None, "date": None}
-    
-    # Extract date from event_id (format: CPI-YYYY-MM-DD)
-    cpi["date"] = pd.to_datetime(
-        cpi["event_id"].str.replace("CPI-", ""), errors="coerce"
-    )
-    cpi = cpi.dropna(subset=["date"]).sort_values("date", ascending=False)
-    latest = cpi.iloc[0]
-    
-    # Use actual_value (not consensus_value) — consensus has NaNs for older CPI rows
-    return {
-        "actual": float(latest["actual_value"]) if pd.notna(latest["actual_value"]) else None,
-        "date": str(latest["date"].date())
-    }
+    try:
+        events = load_all_events()
+        cpi_events = [e for e in events if e.event_type == "CPI" and e.actual is not None]
+        if cpi_events:
+            latest = cpi_events[0]
+            return {
+                "actual": round(float(latest.actual), 2),
+                "date": str(latest.date)
+            }
+    except Exception as e:
+        logger.warning(f"[live_rates] Error getting latest CPI from event calendar: {e}")
+        
+    return rbi_dbie.get_latest_cpi()
 
 
 def get_latest_iip() -> dict:
     """
-    Same pattern as get_latest_cpi() but filter event_type == IIP.
-    Return: { "actual": 5.9, "date": "2024-06-12" }
+    Return the most recent IIP actual from Supabase (via load_all_events),
+    falling back to RBI DBIE CSV.
     """
-    df = pd.read_csv(DATA_DIR / "consensus.csv")
-    iip = df[df["event_type"] == "IIP"].copy()
-    if iip.empty:
-        return {"actual": None, "date": None}
-    
-    iip["date"] = pd.to_datetime(
-        iip["event_id"].str.replace("IIP-", ""), errors="coerce"
-    )
-    iip = iip.dropna(subset=["date"]).sort_values("date", ascending=False)
-    latest = iip.iloc[0]
-    
-    # Use actual_value (not consensus_value) — consensus has NaNs for older IIP rows
-    return {
-        "actual": float(latest["actual_value"]) if pd.notna(latest["actual_value"]) else None,
-        "date": str(latest["date"].date())
-    }
+    try:
+        events = load_all_events()
+        iip_events = [e for e in events if e.event_type == "IIP" and e.actual is not None]
+        if iip_events:
+            latest = iip_events[0]
+            return {
+                "actual": round(float(latest.actual), 2),
+                "date": str(latest.date)
+            }
+    except Exception as e:
+        logger.warning(f"[live_rates] Error getting latest IIP from event calendar: {e}")
+        
+    return rbi_dbie.get_latest_iip()
+
 
 
 def get_latest_nifty() -> dict:
