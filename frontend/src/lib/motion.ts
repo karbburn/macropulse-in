@@ -93,7 +93,7 @@ export const numberRevealVariants: Variants = {
 export const chipContainerVariants: Variants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.15 }
+    transition: { staggerChildren: 0.08, delayChildren: 0.18 }
   }
 }
 
