@@ -264,7 +264,6 @@ def load_all_events() -> list[MacroEvent]:
             )
             # Rate-limit Finnhub API calls: sleep 1s after each CPI event
             if event.event_type == "CPI" and finnhub_key:
-                import time as _time
                 _time.sleep(1)
 
     # Log surprise score calculation statistics
