@@ -46,7 +46,7 @@ export default async function Page() {
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'var(--text-xl)',
+              fontSize: 'var(--text-2xl)',
               color: 'var(--accent-primary)',
               letterSpacing: 'var(--tracking-tight)',
               display: 'inline-block',
