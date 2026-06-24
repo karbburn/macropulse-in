@@ -135,8 +135,10 @@ export default function ReportPage() {
       a.download = `macro-impact-report-${today}.pdf`;
       document.body.appendChild(a);
       a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      setTimeout(() => {
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }, 100);
 
       setSuccessMsg('PDF Report downloaded successfully.');
     } catch (err) {
