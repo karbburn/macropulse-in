@@ -30,8 +30,20 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "MacroPulse - India Edition",
-
   description: "Analyze Indian macroeconomic event impacts on financial markets.",
+  openGraph: {
+    title: "MacroPulse - India Edition",
+    description: "Analyze Indian macroeconomic event impacts on financial markets.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "MacroPulse - Track India's Economic Story",
+      },
+    ],
+    type: "website",
+  },
 };
 
 export const viewport = {
