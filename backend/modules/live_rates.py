@@ -3,7 +3,6 @@
 import logging
 import pandas as pd
 import yfinance as yf
-import time
 from pathlib import Path
 from modules import rbi_dbie
 
@@ -83,13 +82,11 @@ def get_latest_nifty() -> dict:
     Use period="5d" interval="1d" to get recent daily closes.
     Take the last available close.
     
-    sleep(1) before yfinance call — always.
-    
     Return: { "price": 24532.15, "change_pct": 0.43, "date": "2025-06-06" }
     On any error, return: { "price": null, "change_pct": null, "date": null }
     """
     try:
-        time.sleep(1)
+        # time.sleep(1) removed — yfinance has internal rate limiting
         df = yf.download("^NSEI", period="5d", interval="1d", progress=False)
         if df.empty:
             return {"price": None, "change_pct": None, "date": None}
