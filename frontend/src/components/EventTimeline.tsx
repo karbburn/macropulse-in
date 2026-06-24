@@ -143,7 +143,7 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
 
       {/* Hero Header */}
       <div className="mb-10 text-center md:text-left">
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
           Macroeconomic Event <span className="text-brand-amber">Timeline</span>
         </h1>
         <p className="mt-3 text-lg text-neutral-400 max-w-3xl">
@@ -201,7 +201,7 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
               <div key={year} className="relative">
                 {/* Year Heading */}
                 <div className="sticky top-16 z-10 py-2 md:text-center">
-                  <span className="inline-flex rounded-full bg-neutral-900 border border-neutral-700 px-4 py-1 text-base font-bold font-serif text-brand-amber shadow-md shadow-black/50">
+                  <span className="inline-flex rounded-full bg-neutral-900 border border-neutral-700 px-4 py-1 text-base font-bold font-display text-brand-amber shadow-md shadow-black/50">
                     {year}
                   </span>
                 </div>

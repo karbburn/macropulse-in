@@ -32,7 +32,7 @@ export default function EventDetailView({ detail }: EventDetailViewProps) {
         return (
           <div>
             <span className="text-neutral-400 text-xs uppercase tracking-wider block">Decision</span>
-            <span className="text-amber-500 font-serif font-bold text-xl sm:text-2xl uppercase">Hike (+{bps} bps)</span>
+            <span className="text-amber-500 font-display font-bold text-xl sm:text-2xl uppercase">Hike (+{bps} bps)</span>
           </div>
         );
       } else if (outcome.startsWith('cut')) {
@@ -40,21 +40,21 @@ export default function EventDetailView({ detail }: EventDetailViewProps) {
         return (
           <div>
             <span className="text-neutral-400 text-xs uppercase tracking-wider block">Decision</span>
-            <span className="text-rose-500 font-serif font-bold text-xl sm:text-2xl uppercase">Cut (-{bps} bps)</span>
+            <span className="text-rose-500 font-display font-bold text-xl sm:text-2xl uppercase">Cut (-{bps} bps)</span>
           </div>
         );
       } else if (outcome === 'hold') {
         return (
           <div>
             <span className="text-neutral-400 text-xs uppercase tracking-wider block">Decision</span>
-            <span className="text-white font-serif font-bold text-xl sm:text-2xl uppercase">Policy Hold</span>
+            <span className="text-white font-display font-bold text-xl sm:text-2xl uppercase">Policy Hold</span>
           </div>
         );
       }
       return (
         <div>
           <span className="text-neutral-400 text-xs uppercase tracking-wider block">Outcome</span>
-          <span className="text-white font-serif font-bold text-xl sm:text-2xl capitalize">{outcome}</span>
+          <span className="text-white font-display font-bold text-xl sm:text-2xl capitalize">{outcome}</span>
         </div>
       );
     } else {
@@ -168,7 +168,7 @@ export default function EventDetailView({ detail }: EventDetailViewProps) {
           {event.notes && (
             <div className="md:max-w-md border-t border-neutral-800 pt-4 md:border-t-0 md:pt-0 md:border-l md:border-neutral-800 md:pl-6">
               <span className="text-neutral-500 text-xs uppercase tracking-wider block mb-1">Event Notes</span>
-              <p className="text-sm text-neutral-300 italic font-serif">
+              <p className="text-sm text-neutral-300 italic font-display">
                 "{event.notes}"
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function EventDetailView({ detail }: EventDetailViewProps) {
         <div className="lg:col-span-7 space-y-6">
           <div className="rounded-xl border border-neutral-800 bg-[#222222] p-5 shadow-lg overflow-hidden">
             <div className="mb-4">
-              <h3 className="font-serif text-lg font-bold text-white">Market Reactions</h3>
+              <h3 className="font-display text-lg font-bold text-white">Market Reactions</h3>
               <p className="text-xs text-neutral-400">Timeline performance across key asset classes from announcement T-60</p>
             </div>
 

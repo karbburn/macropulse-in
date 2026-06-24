@@ -65,7 +65,7 @@ export default function ReactionChart({ snapshots }: ReactionChartProps) {
   return (
     <div className="rounded-xl border border-neutral-800 bg-[#222222] p-5 shadow-lg">
       <div className="mb-4">
-        <h3 className="font-serif text-lg font-bold text-white">Market Reaction Path</h3>
+        <h3 className="font-display text-lg font-bold text-white">Market Reaction Path</h3>
         <p className="text-xs text-neutral-400">Percentage change relative to the T-60 baseline (1 hour prior to announcement)</p>
       </div>
 
