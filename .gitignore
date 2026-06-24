@@ -1,6 +1,9 @@
 # assets
 /assets/
 
+# Planning artifacts
+.planning/
+
 # Generated reports & logs
 *.pdf
 **/*.pdf
