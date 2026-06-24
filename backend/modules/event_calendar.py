@@ -10,6 +10,7 @@ Data sources:
 import csv
 import logging
 import os
+import time as _time
 from dataclasses import dataclass, asdict
 from datetime import date, time
 from pathlib import Path
@@ -46,6 +47,8 @@ class MacroEvent:
 
 # Module-level cache for load_all_events to avoid blocking Finnhub API calls on every request
 _events_cache: list[MacroEvent] | None = None
+_events_cache_time: float = 0
+_CACHE_TTL = 3600  # 1 hour
 
 
 def _parse_time(time_str: str) -> time | None:
@@ -180,8 +183,8 @@ def load_all_events() -> list[MacroEvent]:
     Returns:
         Sorted list of all MacroEvent objects, newest first.
     """
-    global _events_cache
-    if _events_cache is not None:
+    global _events_cache, _events_cache_time
+    if _events_cache is not None and (_time.time() - _events_cache_time) < _CACHE_TTL:
         return _events_cache
 
     # 1. Load MPC events from local CSV (always local source of truth)
@@ -299,7 +302,15 @@ def load_all_events() -> list[MacroEvent]:
     )
 
     _events_cache = all_events
+    _events_cache_time = _time.time()
     return all_events
+
+
+def clear_cache():
+    """Clear the module-level event cache. Called by nightly precompute."""
+    global _events_cache, _events_cache_time
+    _events_cache = None
+    _events_cache_time = 0
 
 
 def get_event_by_id(event_id: str) -> MacroEvent | None:
