@@ -103,8 +103,8 @@ export default function EventStudyChart({
 
               const key = entry.dataKey.replace('Mean', '') as 'hike' | 'cut' | 'hold';
               let colorClass = 'text-text-secondary';
-              if (key === 'hike') colorClass = 'text-[var(--color-chart-hike)]';
-              else if (key === 'cut') colorClass = 'text-[var(--color-chart-cut)]';
+              if (key === 'hike') colorClass = 'text-[var(--chart-hike)]';
+              else if (key === 'cut') colorClass = 'text-[var(--chart-cut)]';
               else if (key === 'hold') colorClass = 'text-[var(--chart-hold)]';
 
               return (
