@@ -175,7 +175,7 @@ export default function StudyPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setAsset('NIFTY')}
-                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
                   asset === 'NIFTY'
                     ? 'bg-[var(--accent-primary)] text-text-inverse'
                     : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
@@ -185,7 +185,7 @@ export default function StudyPage() {
               </button>
               <button
                 onClick={() => setAsset('USDINR')}
-                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
                   asset === 'USDINR'
                     ? 'bg-[var(--accent-primary)] text-text-inverse'
                     : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
@@ -204,7 +204,7 @@ export default function StudyPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setVisibleSeries((prev) => ({ ...prev, hike: !prev.hike }))}
-                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
                   visibleSeries.hike
                     ? 'bg-[var(--chart-hike)] text-text-inverse font-bold'
                     : 'border border-border-strong text-text-secondary hover:text-text-primary'
@@ -214,7 +214,7 @@ export default function StudyPage() {
               </button>
               <button
                 onClick={() => setVisibleSeries((prev) => ({ ...prev, cut: !prev.cut }))}
-                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
                   visibleSeries.cut
                     ? 'bg-[var(--chart-cut)] text-text-inverse font-bold'
                     : 'border border-border-strong text-text-secondary hover:text-text-primary'
@@ -224,7 +224,7 @@ export default function StudyPage() {
               </button>
               <button
                 onClick={() => setVisibleSeries((prev) => ({ ...prev, hold: !prev.hold }))}
-                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
                   visibleSeries.hold
                     ? 'bg-[var(--chart-hold)] text-text-inverse font-bold'
                     : 'border border-border-strong text-text-secondary hover:text-text-primary'
