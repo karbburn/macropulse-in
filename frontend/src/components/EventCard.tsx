@@ -95,7 +95,7 @@ const formatOutcome = (event: MacroEvent) => {
       const bps = outcome.split('-')[1] || '25';
       return `Rate Cut (-${bps} bps)`;
     } else if (outcome === 'hold') {
-      return 'Policy Repo Rate Held at 6.50%';
+      return 'Policy Repo Rate Held';
     }
     return event.outcome || 'Policy Decision';
   } else if (event.event_type === 'CPI') {
