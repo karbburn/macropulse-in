@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchEvents } from '../../lib/api';
 import { MacroEvent } from '../../lib/types';
+import { PageWrapper } from '../../components/PageWrapper';
 
 export default function ReportPage() {
   const [events, setEvents] = useState<MacroEvent[]>([]);
@@ -136,6 +137,7 @@ export default function ReportPage() {
   };
 
   return (
+    <PageWrapper>
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Title */}
       <div className="mb-8 text-center md:text-left">
@@ -376,5 +378,6 @@ export default function ReportPage() {
         </div>
       </div>
     </div>
+    </PageWrapper>
   );
 }

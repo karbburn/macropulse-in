@@ -2,6 +2,7 @@ import React from 'react';
 import { fetchEvents } from '../lib/api';
 import { MacroEvent } from '../lib/types';
 import EventTimeline from '../components/EventTimeline';
+import { PageWrapper } from '../components/PageWrapper';
 
 // Revalidate once per hour
 export const revalidate = 3600;
@@ -20,8 +21,8 @@ export default async function Page() {
   }
 
   return (
-    <div className="bg-background min-h-screen">
+    <PageWrapper>
       <EventTimeline initialEvents={events} initialError={errorMsg} />
-    </div>
+    </PageWrapper>
   );
 }

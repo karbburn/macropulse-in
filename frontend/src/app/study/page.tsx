@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { PageWrapper } from '../../components/PageWrapper';
 import { fetchStudy } from '../../lib/api';
 import { EventStudyPath } from '../../lib/types';
 import {
@@ -118,6 +119,7 @@ export default function StudyPage() {
   });
 
   return (
+    <PageWrapper>
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Title */}
       <div className="mb-8 text-center md:text-left flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -309,5 +311,6 @@ export default function StudyPage() {
         </div>
       )}
     </div>
+    </PageWrapper>
   );
 }
