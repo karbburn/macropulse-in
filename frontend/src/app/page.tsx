@@ -37,10 +37,10 @@ export default async function Page() {
           <div className="hidden md:block overflow-hidden relative font-mono text-xs text-text-secondary select-none max-w-[450px]">
             <div className="ticker-track flex items-center gap-16 whitespace-nowrap">
               <span className="shrink-0 flex items-center gap-4">
-                RBI REPO: 6.50% <span className="text-text-tertiary font-sans">•</span> CPI: 5.08% <span className="text-text-tertiary font-sans">•</span> IIP: 4.2% <span className="text-text-tertiary font-sans">•</span> NIFTY: 22,530
+                RBI REPO: 6.50% <span className="text-text-tertiary font-body">•</span> CPI: 5.08% <span className="text-text-tertiary font-body">•</span> IIP: 4.2% <span className="text-text-tertiary font-body">•</span> NIFTY: 22,530
               </span>
               <span className="shrink-0 flex items-center gap-4" aria-hidden="true">
-                RBI REPO: 6.50% <span className="text-text-tertiary font-sans">•</span> CPI: 5.08% <span className="text-text-tertiary font-sans">•</span> IIP: 4.2% <span className="text-text-tertiary font-sans">•</span> NIFTY: 22,530
+                RBI REPO: 6.50% <span className="text-text-tertiary font-body">•</span> CPI: 5.08% <span className="text-text-tertiary font-body">•</span> IIP: 4.2% <span className="text-text-tertiary font-body">•</span> NIFTY: 22,530
               </span>
             </div>
           </div>

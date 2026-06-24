@@ -93,6 +93,9 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
 
   const animatedScore = useCountUp(startCount ? (event.surprise_score ?? 0) : 0, 600);
 
+  const safeChartVariants = useSafeVariants(chartVariants);
+  const safeScaleVariants = useSafeVariants(scaleVariants);
+
   // Format surprise score representation
   const hasSurprise = event.surprise_score !== null;
   const absScore = Math.abs(animatedScore);
@@ -146,7 +149,7 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
         {/* Left Column: ReactionLineChart (60%) */}
         <motion.div 
           className="lg:col-span-7 flex flex-col gap-3"
-          variants={useSafeVariants(chartVariants)}
+          variants={safeChartVariants}
           initial="hidden"
           animate="visible"
         >
@@ -161,7 +164,7 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
         {/* Right Column: Surprise Analysis card (40%) */}
         <motion.div 
           className="lg:col-span-5 flex flex-col gap-3"
-          variants={useSafeVariants(scaleVariants)}
+          variants={safeScaleVariants}
           initial="hidden"
           animate="visible"
         >

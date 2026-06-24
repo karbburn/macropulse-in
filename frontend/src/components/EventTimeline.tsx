@@ -18,6 +18,12 @@ const yearGroupVariants: Variants = {
   },
 };
 
+const bannerVariants: Variants = {
+  hidden: { y: -20, opacity: 0 },
+  visible: { y: 0, opacity: 1 },
+  exit: { y: -20, opacity: 0 },
+};
+
 interface EventTimelineProps {
   initialEvents: MacroEvent[];
   initialError: string | null;
@@ -34,6 +40,7 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
 
   const isMobile = useIsMobile();
   const safeItemVariants = useSafeVariants(itemVariants);
+  const safeBannerVariants = useSafeVariants(bannerVariants);
 
   // Client-side backend warming check to wake Render free tier if needed
   useEffect(() => {
@@ -105,9 +112,10 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
       <AnimatePresence>
         {isWarming && (
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
+            variants={safeBannerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="mb-6 rounded border border-border-strong bg-bg-surface p-4 flex items-center gap-3"
           >
