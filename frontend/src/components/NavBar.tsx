@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, BarChart3, Download, Search } from 'lucide-react'
+import useSWR from 'swr'
+import { fetchLatestRates } from '@/lib/api'
+
 
 /**
  * MacroPulse NavBar
@@ -21,10 +24,20 @@ const NAV_ITEMS = [
 export function NavBar() {
   const pathname = usePathname()
 
+  const { data: rates } = useSWR('latest-rates', fetchLatestRates, {
+    revalidateOnFocus: false,
+    dedupingInterval: 3600000,   // 1 hour — matches backend cache
+  })
+
+  const repoLabel = rates?.repo_rate != null
+    ? `RBI: ${rates.repo_rate.toFixed(2)}%`
+    : 'RBI: —'
+
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
     return pathname.startsWith(href)
   }
+
 
   return (
     <>
@@ -105,8 +118,9 @@ export function NavBar() {
               borderRadius: '4px',
             }}
           >
-            RBI Rate: 6.50%
+            {repoLabel}
           </div>
+
         </div>
       </header>
 

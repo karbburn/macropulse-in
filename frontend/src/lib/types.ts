@@ -62,3 +62,18 @@ export interface EventStudyPath {
   lower_band: number[];
   event_count: number;
 }
+
+export interface LatestRates {
+  repo_rate:        number | null;
+  repo_decision:    string | null;
+  repo_date:        string | null;
+  cpi_actual:       number | null;
+  cpi_date:         string | null;
+  iip_actual:       number | null;
+  iip_date:         string | null;
+  nifty_price:      number | null;
+  nifty_change_pct: number | null;
+  nifty_date:       string | null;
+  error:            string | null;
+}
+

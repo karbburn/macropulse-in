@@ -45,3 +45,10 @@ MPC-2024-12-06,2024-12-06,10:00,hold,0,6.50,"Hold; 4-2 majority; CRR cut 50bps a
 MPC-2025-02-07,2025-02-07,10:00,cut,25,6.25,"First cut since 2020; softening inflation"
 MPC-2025-04-09,2025-04-09,10:00,cut,25,6.00,"Unanimous cut; stance shifted to accommodative"
 MPC-2025-06-06,2025-06-06,10:00,cut,50,5.50,"Jumbo 50bps cut; stance changed to neutral"
+MPC-2025-08-08,2025-08-08,10:00,hold,0,5.50,"Status quo; neutral stance maintained"
+MPC-2025-10-09,2025-10-09,10:00,hold,0,5.50,"Status quo; neutral stance maintained"
+MPC-2025-12-05,2025-12-05,10:00,cut,25,5.25,"25bps cut; softer inflation; neutral stance"
+MPC-2026-02-06,2026-02-06,10:00,hold,0,5.25,"Status quo; neutral stance maintained"
+MPC-2026-04-08,2026-04-08,10:00,hold,0,5.25,"Status quo; neutral stance maintained"
+MPC-2026-06-05,2026-06-05,10:00,hold,0,5.25,"Status quo; neutral stance; GDP forecast at 6.6%"
+

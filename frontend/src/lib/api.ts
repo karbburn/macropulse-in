@@ -1,4 +1,4 @@
-import { MacroEvent, EventDetail, ScatterResponse, EventStudyPath } from './types';
+import { MacroEvent, EventDetail, ScatterResponse, EventStudyPath, LatestRates } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -79,3 +79,15 @@ export async function fetchStudy(asset: string): Promise<{ paths: EventStudyPath
   }
   return res.json();
 }
+
+export async function fetchLatestRates(): Promise<LatestRates> {
+  const res = await fetch(`${BASE_URL}/api/latest-rates`, {
+    next: { revalidate: 3600 }, // Cache for 1 hour
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch latest rates: ${res.statusText}`);
+  }
+  return res.json();
+}
+

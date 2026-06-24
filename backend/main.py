@@ -25,6 +25,7 @@ from modules.pdf_generator import generate_pdf
 from modules.market_snapshot import get_all_snapshots
 from modules.reaction import build_reaction_points, compute_regression
 from modules.event_study import compute_event_study
+from modules.live_rates import get_latest_repo_rate, get_latest_cpi, get_latest_iip, get_latest_nifty
 
 
 
@@ -59,6 +60,61 @@ app.add_middleware(
 def health_check() -> dict:
     """Health check endpoint. Used to wake Render free tier."""
     return {"status": "ok", "version": "1.0"}
+
+
+@app.get("/api/latest-rates")
+def latest_rates():
+    """
+    Returns latest macro indicators from local CSV data + yfinance.
+    Lightweight — reads CSVs on every call (fast, files are tiny).
+    Nifty fetch has sleep(1) — total response time ~1-2 seconds.
+    
+    Each indicator is fetched independently so one failure doesn't null the rest.
+    Cache this response for 1 hour on the frontend using SWR.
+    """
+    errors: list[str] = []
+    
+    try:
+        repo = get_latest_repo_rate()
+    except Exception as e:
+        logger.error(f"[/api/latest-rates] repo_rate error: {e}")
+        repo = {"rate": None, "decision": None, "date": None}
+        errors.append(f"repo: {e}")
+    
+    try:
+        cpi = get_latest_cpi()
+    except Exception as e:
+        logger.error(f"[/api/latest-rates] cpi error: {e}")
+        cpi = {"actual": None, "date": None}
+        errors.append(f"cpi: {e}")
+    
+    try:
+        iip = get_latest_iip()
+    except Exception as e:
+        logger.error(f"[/api/latest-rates] iip error: {e}")
+        iip = {"actual": None, "date": None}
+        errors.append(f"iip: {e}")
+    
+    try:
+        nifty = get_latest_nifty()
+    except Exception as e:
+        logger.error(f"[/api/latest-rates] nifty error: {e}")
+        nifty = {"price": None, "change_pct": None, "date": None}
+        errors.append(f"nifty: {e}")
+    
+    return {
+        "repo_rate": repo["rate"],
+        "repo_decision": repo["decision"],
+        "repo_date": repo["date"],
+        "cpi_actual": cpi["actual"],
+        "cpi_date": cpi["date"],
+        "iip_actual": iip["actual"],
+        "iip_date": iip["date"],
+        "nifty_price": nifty["price"],
+        "nifty_change_pct": nifty["change_pct"],
+        "nifty_date": nifty["date"],
+        "error": "; ".join(errors) if errors else None,
+    }
 
 
 @app.get("/events")
