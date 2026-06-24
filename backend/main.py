@@ -143,8 +143,9 @@ def list_events(
       - event_type: MPC | CPI | IIP | all (default: all)
       - from_date: YYYY-MM-DD
       - to_date: YYYY-MM-DD
-      - limit: int (default: 100)
+      - limit: int (default 100)
     """
+    event_type = event_type.upper()  # Normalize early
     try:
         all_events = load_all_events()
     except Exception as e:
