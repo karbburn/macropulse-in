@@ -33,6 +33,13 @@ from modules.event_study import compute_event_study
 from modules.live_rates import get_latest_repo_rate, get_latest_cpi, get_latest_iip, get_latest_nifty
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Preload events cache on server start to avoid cold-start latency."""
+    import threading
+    threading.Thread(target=load_all_events, daemon=True).start()
+
+
 
 # Configure logging
 logging.basicConfig(
