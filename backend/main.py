@@ -42,10 +42,13 @@ app = FastAPI(
     version="1.0",
 )
 
-# CORS middleware — allow all origins
+# CORS middleware — locked to Vercel frontend + local dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://macropulse-in.vercel.app",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
