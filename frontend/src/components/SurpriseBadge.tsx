@@ -19,7 +19,8 @@ export default function SurpriseBadge({ score }: SurpriseBadgeProps) {
         animate="visible"
         className="inline-flex items-center gap-1 rounded-full border-[1.5px] border-border-strong bg-bg-surface px-2.5 py-1 text-xs text-text-tertiary font-mono"
       >
-        —
+        -
+
       </motion.span>
     );
   }

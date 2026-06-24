@@ -102,8 +102,9 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
   const isPositive = event.surprise_score !== null && event.surprise_score > 0;
   const isNegative = event.surprise_score !== null && event.surprise_score < 0;
   
-  let scoreSymbol = '—';
+  let scoreSymbol = '-';
   let scoreColorClass = 'text-text-secondary';
+
   
   if (hasSurprise) {
     scoreSymbol = isPositive ? '▲' : isNegative ? '▼' : '';
@@ -219,7 +220,8 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
                       Actual Print
                     </span>
                     <span className="font-mono text-lg font-bold text-text-primary tabular-nums">
-                      {event.actual !== null ? `${event.actual.toFixed(2)}%` : '—'}
+                      {event.actual !== null ? `${event.actual.toFixed(2)}%` : '-'}
+
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
@@ -227,7 +229,8 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
                       Consensus
                     </span>
                     <span className="font-mono text-lg font-semibold text-text-secondary tabular-nums">
-                      {event.consensus !== null ? `${event.consensus.toFixed(2)}%` : '—'}
+                      {event.consensus !== null ? `${event.consensus.toFixed(2)}%` : '-'}
+
                     </span>
                   </div>
                 </>

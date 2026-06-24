@@ -26,12 +26,13 @@ export function NavBar() {
 
   const { data: rates } = useSWR('latest-rates', fetchLatestRates, {
     revalidateOnFocus: false,
-    dedupingInterval: 3600000,   // 1 hour — matches backend cache
+    dedupingInterval: 3600000,   // 1 hour - matches backend cache
   })
 
   const repoLabel = rates?.repo_rate != null
     ? `RBI: ${rates.repo_rate.toFixed(2)}%`
-    : 'RBI: —'
+    : 'RBI: -'
+
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'

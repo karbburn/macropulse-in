@@ -138,7 +138,8 @@ export default function StudyPage() {
   const holdReturn = calculateT1DReturn(holdPath);
 
   const formatReturn = (val: number | null) => {
-    if (val === null) return '—';
+    if (val === null) return '-';
+
     const formatted = val.toFixed(2);
     return val > 0 ? `+${formatted}%` : `${formatted}%`;
   };

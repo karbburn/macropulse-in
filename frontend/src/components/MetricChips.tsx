@@ -38,7 +38,8 @@ export default function MetricChips({ snapshots }: MetricChipsProps) {
 
         // Determine formatting and color coding
         let pctColorClass = 'text-text-secondary';
-        let formattedValue = '—';
+        let formattedValue = '-';
+
 
         if (pctChange !== null && pctChange !== undefined) {
           // Convert fraction to percentage if it's not already in percentage form

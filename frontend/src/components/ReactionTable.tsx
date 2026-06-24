@@ -22,7 +22,7 @@ export default function ReactionTable({ snapshots }: ReactionTableProps) {
 
   const renderValueCell = (pctChange: number | null) => {
     if (pctChange === null || pctChange === undefined) {
-      return <span className="text-text-tertiary font-mono">—</span>;
+      return <span className="text-text-tertiary font-mono">-</span>;
     }
 
     const isPos = pctChange > 0.0001;
@@ -95,10 +95,11 @@ export default function ReactionTable({ snapshots }: ReactionTableProps) {
                   </span>
                 </td>
 
-                {/* T-60 (always baseline "—") */}
+                {/* T-60 (always baseline "-") */}
                 <td className="py-4 px-4 text-right">
-                  <span className="text-text-tertiary font-mono text-sm">—</span>
+                  <span className="text-text-tertiary font-mono text-sm">-</span>
                 </td>
+
 
                 {/* T+30 */}
                 <td className="py-4 px-4 text-right">

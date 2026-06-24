@@ -299,3 +299,24 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .ticker-track { animation: none; }
 }
+
+/* ── Mobile Footer Media Query Overrides (macropulse-FOOTER-PROMPT-v2.md) ── */
+@media (max-width: 767px) {
+  footer > div:first-child {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  /* On mobile, order: credit first, then branding, then links */
+  footer > div:first-child > div:nth-child(1) { order: 3; }  /* branding */
+  footer > div:first-child > div:nth-child(2) { order: 1; }  /* credit — top */
+  footer > div:first-child > div:nth-child(3) { order: 2; align-items: center; }  /* links */
+
+  footer {
+    padding-left: var(--space-4) !important;
+    padding-right: var(--space-4) !important;
+    margin-bottom: 72px; /* clear mobile bottom tab bar */
+  }
+}
+

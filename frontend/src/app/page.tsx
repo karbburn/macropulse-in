@@ -28,14 +28,15 @@ export default async function Page() {
   }
 
   const fmtRepo = (val: number | null) =>
-    val != null ? `${val.toFixed(2)}%` : '—';
+    val != null ? `${val.toFixed(2)}%` : '-';
 
   const fmtPct = (val: number | null) =>
-    val != null ? `${val}%` : '—';
+    val != null ? `${val}%` : '-';
 
   const niftyLabel = rates?.nifty_price != null
     ? `${rates.nifty_price.toLocaleString('en-IN')}${rates.nifty_change_pct != null ? ` (${rates.nifty_change_pct > 0 ? '+' : ''}${rates.nifty_change_pct}%)` : ''}`
-    : '—';
+    : '-';
+
 
   return (
     <PageWrapper>
