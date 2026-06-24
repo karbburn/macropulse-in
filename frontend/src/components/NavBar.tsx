@@ -30,7 +30,7 @@ export function NavBar() {
     <>
       {/* ─── Desktop Nav (≥768px) ─── */}
       <header
-        className="hidden md:block sticky top-0 z-100"
+        className="hidden md:block sticky top-0 z-[100]"
         style={{
           height: '56px',
           background: 'var(--bg-surface)',
@@ -112,7 +112,7 @@ export function NavBar() {
 
       {/* ─── Mobile Bottom Tab Bar (<768px) ─── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-100"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[100]"
         style={{
           height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
