@@ -7,7 +7,7 @@ Can also be triggered manually via workflow_dispatch.
 Steps:
 1. Load all events from mpc_calendar.csv and consensus.csv
 2. Fetch latest CPI from Finnhub → upsert new events to Supabase
-3. Fetch latest IIP from data.gov.in → upsert new events to Supabase
+3. Fetch latest CPI/IIP from MOSPI + RBI DBIE → upsert new events to Supabase
 4. Compute surprise scores for all events → update Supabase
 5. For each event without a cached snapshot (or snapshot > 25hr old):
    compute all 4 asset snapshots → upsert to Supabase
@@ -355,33 +355,66 @@ def main() -> None:
         logger.info("No new CPI events from Finnhub.")
 
     # ------------------------------------------------------------------
-    # Step 3: Fetch latest IIP from data.gov.in
+    # Step 3: Fetch latest CPI/IIP from MOSPI + RBI DBIE
     # ------------------------------------------------------------------
-    logger.info("Step 3: Fetching latest IIP data from data.gov.in...")
-    new_iip = _fetch_new_iip_from_datagov()
-    if new_iip:
-        logger.info(f"Found {len(new_iip)} IIP records from data.gov.in.")
-        for iip in new_iip:
-            event_id = f"IIP-{iip['date']}"
+    logger.info("Step 3: Fetching latest CPI/IIP data from MOSPI + RBI DBIE...")
+    try:
+        from modules import mospi_scraper, rbi_dbie
+        latest_data = mospi_scraper.get_cpi_iip_with_fallback(rbi_dbie)
+        
+        cpi = latest_data["cpi"]
+        iip = latest_data["iip"]
+        
+        logger.info(f"MOSPI/DBIE CPI: {cpi['actual']}% (release_date: {cpi['release_date']}, source: {cpi['source']})")
+        logger.info(f"MOSPI/DBIE IIP: {iip['actual']}% (release_date: {iip['release_date']}, source: {iip['source']})")
+        
+        # Merge CPI event
+        if cpi["release_date"] and cpi["actual"] is not None:
+            event_id = f"CPI-{cpi['release_date']}"
+            existing = next((e for e in all_events if e.id == event_id), None)
+            if existing is None:
+                new_event = MacroEvent(
+                    id=event_id,
+                    event_type="CPI",
+                    date=date_type.fromisoformat(cpi["release_date"]),
+                    time=None,
+                    outcome=str(cpi["actual"]),
+                    actual=cpi["actual"],
+                    consensus=None,
+                    surprise_score=None,
+                    notes=f"Source: {cpi['source']}",
+                )
+                all_events.append(new_event)
+            elif existing.actual is None:
+                existing.actual = cpi["actual"]
+                existing.outcome = str(cpi["actual"])
+                existing.notes = f"Source: {cpi['source']}"
+
+        # Merge IIP event
+        if iip["release_date"] and iip["actual"] is not None:
+            event_id = f"IIP-{iip['release_date']}"
             existing = next((e for e in all_events if e.id == event_id), None)
             if existing is None:
                 new_event = MacroEvent(
                     id=event_id,
                     event_type="IIP",
-                    date=date_type.fromisoformat(iip["date"]),
+                    date=date_type.fromisoformat(iip["release_date"]),
                     time=None,
-                    outcome=str(iip["actual"]) if iip.get("actual") else None,
-                    actual=iip.get("actual"),
-                    consensus=iip.get("consensus"),
+                    outcome=str(iip["actual"]),
+                    actual=iip["actual"],
+                    consensus=None,
                     surprise_score=None,
-                    notes=f"Source: {iip.get('source', 'data.gov.in')}",
+                    notes=f"Source: {iip['source']}",
                 )
                 all_events.append(new_event)
-            elif existing.actual is None and iip.get("actual") is not None:
+            elif existing.actual is None:
                 existing.actual = iip["actual"]
                 existing.outcome = str(iip["actual"])
-    else:
-        logger.info("No new IIP events from data.gov.in.")
+                existing.notes = f"Source: {iip['source']}"
+
+    except Exception as e:
+        logger.error(f"Error fetching CPI/IIP from MOSPI + RBI DBIE: {e}")
+        errors += 1
 
     # ------------------------------------------------------------------
     # Step 4: Upsert all events to Supabase (with surprise scores)
