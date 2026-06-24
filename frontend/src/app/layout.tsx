@@ -1,17 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
-import Link from "next/link";
+import { DM_Serif_Display, Syne, JetBrains_Mono } from "next/font/google";
+import { AnimatePresence } from "framer-motion";
 import "./globals.css";
+import { NavBar } from "@/components/NavBar";
 
-const inter = Inter({
-  variable: "--font-inter",
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-display-next",
   subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const syne = Syne({
+  variable: "--font-body-next",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
+  variable: "--font-mono-next",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
@@ -21,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: '#1a1a1a',
+  themeColor: '#0e0e0e',
   width: 'device-width',
   initialScale: 1,
 };
@@ -34,52 +45,32 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${dmSerifDisplay.variable} ${syne.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        {/* Navigation Bar */}
-        <header className="sticky top-0 z-50 border-b border-[#2c2c2c] bg-[#1a1a1a]/85 backdrop-blur-md">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-8">
-                <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-                  <span className="font-serif text-xl font-bold tracking-tight text-brand-amber">
-                    MACRO<span className="text-neutral-400 font-sans text-xs font-semibold ml-1.5 uppercase tracking-widest">Pulse</span>
-                  </span>
-                </Link>
-                <nav className="flex items-center gap-6">
-                  <Link
-                    href="/"
-                    className="text-sm font-medium text-neutral-300 hover:text-brand-amber transition-colors"
-                  >
-                    Timeline
-                  </Link>
-                  <Link
-                    href="/study"
-                    className="text-sm font-medium text-neutral-300 hover:text-brand-amber transition-colors"
-                  >
-                    Event Study
-                  </Link>
-                  <Link
-                    href="/report"
-                    className="text-sm font-medium text-neutral-300 hover:text-brand-amber transition-colors"
-                  >
-                    Report Builder
-                  </Link>
-                </nav>
-              </div>
-            </div>
-          </div>
-        </header>
+      <body className="min-h-full flex flex-col">
+        <NavBar />
 
-        {/* Main Content */}
-        <main className="flex-1">
-          {children}
+        {/* Main Content — pb-20 on mobile for bottom tab bar clearance */}
+        <main className="flex-1 pb-20 md:pb-0">
+          <AnimatePresence mode="wait">
+            {children}
+          </AnimatePresence>
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-[#2c2c2c] bg-[#151515] py-6 text-center text-xs text-neutral-500">
-          <p>© {new Date().getFullYear()} MacroPulse — India Edition. Market data powered by yfinance.</p>
+        {/* Footer — minimal, per DESIGN.MD §6.1 */}
+        <footer
+          className="hidden md:block"
+          style={{
+            borderTop: '1px solid var(--border-subtle)',
+            background: 'var(--bg-surface)',
+            padding: 'var(--space-6) 0',
+            textAlign: 'center',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          <p>Data: yfinance · Finnhub · data.gov.in</p>
         </footer>
       </body>
     </html>
