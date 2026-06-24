@@ -13,7 +13,7 @@ const TABS = ['ALL', 'MPC', 'CPI', 'IIP'] as const;
 export default function FilterTabs({ active, onChange }: FilterTabsProps) {
   const reduce = useReducedMotion();
   return (
-    <div className="flex gap-6 overflow-x-auto pb-px scrollbar-none">
+    <div className="flex gap-6 overflow-x-auto pb-px scrollbar-none w-full justify-center md:justify-start">
       {TABS.map((tab) => {
         const isActive = active.toUpperCase() === tab;
         return (

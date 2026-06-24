@@ -42,13 +42,14 @@ export default async function Page() {
     <PageWrapper>
       <div className="max-w-[860px] mx-auto px-4 md:px-0 pb-16">
         {/* Mobile Wordmark */}
-        <div className="md:hidden mb-6">
+        <div className="md:hidden mb-6 text-center pt-2">
           <span
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'var(--text-xl)',
               color: 'var(--accent-primary)',
               letterSpacing: 'var(--tracking-tight)',
+              display: 'inline-block',
             }}
           >
             MacroPulse
