@@ -8,12 +8,9 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://sourabh08.vercel.app https://*.sourabh08.vercel.app;",
+            value: "frame-ancestors 'self' https://macropulse-in.vercel.app;",
           },
-          {
-            key: "X-Frame-Options",
-            value: "ALLOW-FROM https://sourabh08.vercel.app",
-          },
+          // X-Frame-Options removed — CSP frame-ancestors supersedes it (WR-06)
         ],
       },
     ];
