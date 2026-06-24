@@ -717,6 +717,7 @@ def generate_pdf_reportlab(
     )
     
     story = []
+    open_buffers: list[io.BytesIO] = []
     
     # 2. Cover Page
     story.append(Spacer(1, 150))
@@ -845,7 +846,7 @@ def generate_pdf_reportlab(
         fig = make_event_combined_chart(snapshots_data.get(e.id, {}), options.get("assets", []))
         img_buf = chart_to_bytes(fig)
         react_img = Image(img_buf, width=420, height=308)
-        img_buf.close()
+        open_buffers.append(img_buf)
         event_story.append(react_img)
         
         story.append(KeepTogether(event_story))
@@ -867,7 +868,7 @@ def generate_pdf_reportlab(
                 fig = make_scatter_chart(points, regression, asset)
                 img_buf = chart_to_bytes(fig)
                 scatter_img = Image(img_buf, width=380, height=266)
-                img_buf.close()
+                open_buffers.append(img_buf)
                 scatter_story.append(scatter_img)
                 
                 story.append(KeepTogether(scatter_story))
@@ -887,16 +888,20 @@ def generate_pdf_reportlab(
                     fig = make_study_chart(paths_list)
                     img_buf = chart_to_bytes(fig)
                     study_img = Image(img_buf, width=400, height=248)
-                    img_buf.close()
+                    open_buffers.append(img_buf)
                     study_story.append(study_img)
                     
                     story.append(KeepTogether(study_story))
                     story.append(PageBreak())
                     
     # Build Document
-    doc.build(story, onFirstPage=draw_dark_bg, onLaterPages=draw_dark_bg)
-    pdf_bytes = buffer.getvalue()
-    buffer.close()
+    try:
+        doc.build(story, onFirstPage=draw_dark_bg, onLaterPages=draw_dark_bg)
+        pdf_bytes = buffer.getvalue()
+    finally:
+        for buf in open_buffers:
+            buf.close()
+        buffer.close()
     return pdf_bytes
 
 # --------------------------------------------------------------------------- #
