@@ -201,7 +201,10 @@ def get_event(event_id: str) -> dict:
         event = get_event_by_id(event_id)
     except Exception as e:
         logger.error(f"Error retrieving event {event_id}: {e}")
-        raise HTTPException(status_code=500, detail="Internal error retrieving event")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal error retrieving event: {str(e)}"
+        )
 
     if event is None:
         raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
