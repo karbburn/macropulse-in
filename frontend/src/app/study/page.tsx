@@ -1,28 +1,35 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { PageWrapper } from '../../components/PageWrapper';
 import { fetchStudy } from '../../lib/api';
 import { EventStudyPath } from '../../lib/types';
-import {
-  ComposedChart,
-  Line,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts';
+import EventStudyChart from '../../components/EventStudyChart';
+import { scaleVariants, useSafeVariants } from '../../lib/motion';
 
 export default function StudyPage() {
+  const reduce = useReducedMotion();
+  const safeScale = useSafeVariants(scaleVariants);
+
+  // States
   const [asset, setAsset] = useState<'NIFTY' | 'USDINR'>('NIFTY');
   const [paths, setPaths] = useState<EventStudyPath[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Unified visibility state for Hike, Cut, Hold series
+  const [visibleSeries, setVisibleSeries] = useState({
+    hike: true,
+    cut: true,
+    hold: true,
+  });
+
+  // Collapsible methodology section state
+  const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
+
+  // Fetch event study data on asset change
   useEffect(() => {
     let active = true;
     setIsLoading(true);
@@ -50,20 +57,21 @@ export default function StudyPage() {
     };
   }, [asset]);
 
-  // Find counts
+  // Find paths
   const hikePath = paths.find((p) => p.decision_type === 'hike');
   const cutPath = paths.find((p) => p.decision_type === 'cut');
   const holdPath = paths.find((p) => p.decision_type === 'hold');
 
-  const hikeCount = hikePath?.event_count ?? 0;
-  const cutCount = cutPath?.event_count ?? 0;
-  const holdCount = holdPath?.event_count ?? 0;
+  const counts = {
+    hike: hikePath?.event_count ?? 0,
+    cut: cutPath?.event_count ?? 0,
+    hold: holdPath?.event_count ?? 0,
+  };
 
   // Prepare chart data (days -2 to +2)
   const days = [-2, -1, 0, 1, 2];
   const chartData = days.map((day) => {
     const point: {
-      name: string;
       dayVal: number;
       hikeMean: number | null;
       hikeBand: [number, number] | null;
@@ -72,7 +80,6 @@ export default function StudyPage() {
       holdMean: number | null;
       holdBand: [number, number] | null;
     } = {
-      name: `T${day >= 0 ? '+' : ''}${day}`,
       dayVal: day,
       hikeMean: null,
       hikeBand: null,
@@ -85,10 +92,10 @@ export default function StudyPage() {
     if (hikePath) {
       const idx = hikePath.days.indexOf(day);
       if (idx !== -1) {
-        point.hikeMean = parseFloat(hikePath.mean_indexed[idx].toFixed(2));
+        point.hikeMean = parseFloat(hikePath.mean_indexed[idx].toFixed(3));
         point.hikeBand = [
-          parseFloat(hikePath.lower_band[idx].toFixed(2)),
-          parseFloat(hikePath.upper_band[idx].toFixed(2)),
+          parseFloat(hikePath.lower_band[idx].toFixed(3)),
+          parseFloat(hikePath.upper_band[idx].toFixed(3)),
         ];
       }
     }
@@ -96,10 +103,10 @@ export default function StudyPage() {
     if (cutPath) {
       const idx = cutPath.days.indexOf(day);
       if (idx !== -1) {
-        point.cutMean = parseFloat(cutPath.mean_indexed[idx].toFixed(2));
+        point.cutMean = parseFloat(cutPath.mean_indexed[idx].toFixed(3));
         point.cutBand = [
-          parseFloat(cutPath.lower_band[idx].toFixed(2)),
-          parseFloat(cutPath.upper_band[idx].toFixed(2)),
+          parseFloat(cutPath.lower_band[idx].toFixed(3)),
+          parseFloat(cutPath.upper_band[idx].toFixed(3)),
         ];
       }
     }
@@ -107,10 +114,10 @@ export default function StudyPage() {
     if (holdPath) {
       const idx = holdPath.days.indexOf(day);
       if (idx !== -1) {
-        point.holdMean = parseFloat(holdPath.mean_indexed[idx].toFixed(2));
+        point.holdMean = parseFloat(holdPath.mean_indexed[idx].toFixed(3));
         point.holdBand = [
-          parseFloat(holdPath.lower_band[idx].toFixed(2)),
-          parseFloat(holdPath.upper_band[idx].toFixed(2)),
+          parseFloat(holdPath.lower_band[idx].toFixed(3)),
+          parseFloat(holdPath.upper_band[idx].toFixed(3)),
         ];
       }
     }
@@ -118,199 +125,270 @@ export default function StudyPage() {
     return point;
   });
 
+  // Calculate Avg T+1D return for each path (indexed_value_at_T1 - 100)
+  const calculateT1DReturn = (path: EventStudyPath | undefined) => {
+    if (!path) return null;
+    const idxOfTPlus1 = path.days.indexOf(1);
+    if (idxOfTPlus1 === -1) return null;
+    return path.mean_indexed[idxOfTPlus1] - 100;
+  };
+
+  const hikeReturn = calculateT1DReturn(hikePath);
+  const cutReturn = calculateT1DReturn(cutPath);
+  const holdReturn = calculateT1DReturn(holdPath);
+
+  const formatReturn = (val: number | null) => {
+    if (val === null) return '—';
+    const formatted = val.toFixed(2);
+    return val > 0 ? `+${formatted}%` : `${formatted}%`;
+  };
+
+  const getReturnColorClass = (val: number | null) => {
+    if (val === null) return 'text-text-tertiary';
+    if (val > 0.001) return 'text-[var(--positive)]';
+    if (val < -0.001) return 'text-[var(--negative)]';
+    return 'text-text-secondary';
+  };
+
   return (
     <PageWrapper>
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Title */}
-      <div className="mb-8 text-center md:text-left flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            RBI MPC decisions <span className="text-brand-amber">Event Study</span>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex flex-col gap-6 md:gap-8">
+        
+        {/* Page Header */}
+        <div className="flex flex-col gap-2 text-left">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
+            RBI MPC Decisions <span className="text-[var(--accent-primary)] font-display italic">Event Study</span>
           </h1>
-          <p className="mt-2 text-sm text-neutral-400 max-w-xl">
+          <p className="text-sm text-text-secondary max-w-xl font-body">
             Analyze the average indexed market path (indexed to 100 on Event Day T0) from T-2 to T+2 trading days for hikes, cuts, and holds.
           </p>
         </div>
 
-        {/* Toggle buttons */}
-        <div className="inline-flex rounded-lg bg-neutral-800 p-1 border border-neutral-700 self-center md:self-end">
-          <button
-            onClick={() => setAsset('NIFTY')}
-            className={`rounded-md px-4 py-2 text-sm font-semibold transition-all ${
-              asset === 'NIFTY'
-                ? 'bg-brand-amber text-neutral-950 shadow'
-                : 'text-neutral-300 hover:text-white'
-            }`}
-          >
-            Nifty 50
-          </button>
-          <button
-            onClick={() => setAsset('USDINR')}
-            className={`rounded-md px-4 py-2 text-sm font-semibold transition-all ${
-              asset === 'USDINR'
-                ? 'bg-brand-amber text-neutral-950 shadow'
-                : 'text-neutral-300 hover:text-white'
-            }`}
-          >
-            USD / INR
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-6 text-center mb-8">
-          <p className="text-red-400 font-medium">Failed to load study data</p>
-          <p className="text-neutral-500 text-sm mt-1">{error}</p>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex h-96 flex-col items-center justify-center rounded-xl border border-neutral-800 bg-[#222222]">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-amber border-r-transparent"></div>
-          <p className="text-neutral-400 mt-4 font-medium">Computing event study averages...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Chart Card */}
-          <div className="lg:col-span-8 rounded-xl border border-neutral-800 bg-[#222222] p-6 shadow-lg">
-            <h3 className="font-serif text-lg font-bold text-white mb-6">Indexed Price Path (T=0: 100)</h3>
-            <div className="h-[400px] w-full font-mono text-xs">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    axisLine={{ stroke: '#3f3f46' }}
-                  />
-                  <YAxis
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    axisLine={{ stroke: '#3f3f46' }}
-                    tickFormatter={(value) => `${value}`}
-                    domain={['auto', 'auto']}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f1f1f',
-                      borderColor: '#3e3e3e',
-                      borderRadius: '8px',
-                      color: '#e5e7eb',
-                    }}
-                    labelClassName="font-bold text-brand-amber font-mono"
-                  />
-                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: '15px' }} />
-                  
-                  {/* Reference line for Event Day T0 */}
-                  <ReferenceLine
-                    x="T0"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    label={{
-                      value: 'Event Day',
-                      position: 'top',
-                      fill: '#f59e0b',
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      offset: 10
-                    }}
-                  />
-
-                  {/* Confidence Band Areas */}
-                  <Area
-                    dataKey="hikeBand"
-                    name="Hike Band (±1 Std)"
-                    fill="#f59e0b"
-                    fillOpacity={0.06}
-                    stroke="none"
-                    legendType="none"
-                  />
-                  <Area
-                    dataKey="cutBand"
-                    name="Cut Band (±1 Std)"
-                    fill="#ef4444"
-                    fillOpacity={0.06}
-                    stroke="none"
-                    legendType="none"
-                  />
-                  <Area
-                    dataKey="holdBand"
-                    name="Hold Band (±1 Std)"
-                    fill="#737373"
-                    fillOpacity={0.06}
-                    stroke="none"
-                    legendType="none"
-                  />
-
-                  {/* Mean Lines */}
-                  {hikeCount > 0 && (
-                    <Line
-                      type="monotone"
-                      dataKey="hikeMean"
-                      name={`Rate Hike (N = ${hikeCount})`}
-                      stroke="#f59e0b"
-                      strokeWidth={3}
-                      dot={{ r: 4, stroke: '#f59e0b', strokeWidth: 1, fill: '#1a1a1a' }}
-                    />
-                  )}
-                  {cutCount > 0 && (
-                    <Line
-                      type="monotone"
-                      dataKey="cutMean"
-                      name={`Rate Cut (N = ${cutCount})`}
-                      stroke="#ef4444"
-                      strokeWidth={3}
-                      dot={{ r: 4, stroke: '#ef4444', strokeWidth: 1, fill: '#1a1a1a' }}
-                    />
-                  )}
-                  {holdCount > 0 && (
-                    <Line
-                      type="monotone"
-                      dataKey="holdMean"
-                      name={`Policy Hold (N = ${holdCount})`}
-                      stroke="#737373"
-                      strokeWidth={3}
-                      dot={{ r: 4, stroke: '#737373', strokeWidth: 1, fill: '#1a1a1a' }}
-                    />
-                  )}
-                </ComposedChart>
-              </ResponsiveContainer>
+        {/* STEP 1: Asset + Decision Type Toggle Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-border-subtle pb-6 mt-2">
+          {/* Asset Selection */}
+          <div className="flex flex-col gap-2">
+            <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
+              Asset
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAsset('NIFTY')}
+                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                  asset === 'NIFTY'
+                    ? 'bg-[var(--accent-primary)] text-text-inverse'
+                    : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
+                }`}
+              >
+                Nifty 50
+              </button>
+              <button
+                onClick={() => setAsset('USDINR')}
+                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                  asset === 'USDINR'
+                    ? 'bg-[var(--accent-primary)] text-text-inverse'
+                    : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
+                }`}
+              >
+                USD / INR
+              </button>
             </div>
           </div>
 
-          {/* Right column sidebar explanation */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="rounded-xl border border-neutral-800 bg-[#222222] p-5 shadow-lg">
-              <h4 className="font-serif text-lg font-bold text-white mb-3">Understanding the Study</h4>
-              <div className="space-y-4 text-sm text-neutral-300">
-                <p>
-                  An <strong>Event Study</strong> isolates the impact of a specific recurring event type on asset prices.
-                </p>
-                <p>
-                  Here, we track the price behavior of <strong className="text-white">{asset}</strong> surrounding all historical RBI Monetary Policy Committee decisions since 2018.
-                </p>
-                <ul className="list-disc pl-5 space-y-2 text-neutral-400">
-                  <li><strong>T-2 to T+2:</strong> Represents trading days relative to the announcement day (T0). weekends and market holidays are excluded.</li>
-                  <li><strong>Indexation:</strong> Every individual event's price path is scaled to 100 on the close of T0. The lines plot the average (mean) of these paths.</li>
-                  <li><strong>Shaded Bands:</strong> Show the ±1 standard deviation range, indicating volatility and dispersion among individual event outcomes.</li>
-                </ul>
-              </div>
+          {/* Series Visibility Toggles */}
+          <div className="flex flex-col gap-2">
+            <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
+              Decision
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setVisibleSeries((prev) => ({ ...prev, hike: !prev.hike }))}
+                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                  visibleSeries.hike
+                    ? 'bg-[var(--chart-hike)] text-text-inverse font-bold'
+                    : 'border border-border-strong text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Hike
+              </button>
+              <button
+                onClick={() => setVisibleSeries((prev) => ({ ...prev, cut: !prev.cut }))}
+                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                  visibleSeries.cut
+                    ? 'bg-[var(--chart-cut)] text-text-inverse font-bold'
+                    : 'border border-border-strong text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Cut
+              </button>
+              <button
+                onClick={() => setVisibleSeries((prev) => ({ ...prev, hold: !prev.hold }))}
+                className={`rounded-full px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+                  visibleSeries.hold
+                    ? 'bg-[var(--chart-hold)] text-text-inverse font-bold'
+                    : 'border border-border-strong text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Hold
+              </button>
             </div>
+          </div>
+        </div>
 
-            <div className="rounded-xl border border-neutral-800 bg-[#222222] p-5 shadow-lg">
-              <h4 className="font-serif text-base font-bold text-white mb-2">Observations</h4>
-              <p className="text-sm text-neutral-400">
-                Historically, RBI rate hikes tend to create moderate initial volatility with indexing reversion. Cuts are often pre-empted or generate more directional responses depending on macro environments. Holds represent standard policy baseline path behavior.
+        {/* Error State */}
+        {error && (
+          <div className="rounded-[4px] border border-border-strong p-6 text-center" style={{ borderColor: 'var(--negative)', background: 'var(--negative-dim)' }}>
+            <p className="text-[var(--negative)] font-semibold font-body">Failed to load study data</p>
+            <p className="text-text-secondary text-sm mt-1">{error}</p>
+          </div>
+        )}
+
+        {/* STEP 2: Main Event Study Chart */}
+        {isLoading ? (
+          <div className="flex h-[320px] md:h-[400px] flex-col items-center justify-center rounded-[4px] border border-border-subtle bg-bg-surface p-6 text-text-secondary">
+            <div className="spinner h-8 w-8 mb-4"></div>
+            <p className="font-body text-sm tracking-wider uppercase text-text-tertiary animate-pulse">
+              Computing event study averages...
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-[4px] border border-border-subtle bg-bg-surface p-5 md:p-6 hover:border-border-strong transition-colors">
+            <EventStudyChart
+              data={chartData}
+              visibleSeries={visibleSeries}
+              setVisibleSeries={setVisibleSeries}
+              counts={counts}
+            />
+          </div>
+        )}
+
+        {/* STEP 3: Stat Cards Below Chart */}
+        {!isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
+            {/* Hike Card */}
+            <motion.div
+              variants={safeScale}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+              className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
+                visibleSeries.hike ? 'opacity-100' : 'opacity-40'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-body text-xs font-semibold tracking-wider text-[var(--chart-hike)] uppercase">
+                  Rate Hike Averages
+                </span>
+                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
+                  N = {counts.hike}
+                </span>
+              </div>
+              <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${getReturnColorClass(hikeReturn)}`}>
+                {formatReturn(hikeReturn)}
+              </span>
+              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
+                Average T+1D Return
+              </span>
+            </motion.div>
+
+            {/* Cut Card */}
+            <motion.div
+              variants={safeScale}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+              className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
+                visibleSeries.cut ? 'opacity-100' : 'opacity-40'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-body text-xs font-semibold tracking-wider text-[var(--chart-cut)] uppercase">
+                  Rate Cut Averages
+                </span>
+                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
+                  N = {counts.cut}
+                </span>
+              </div>
+              <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${getReturnColorClass(cutReturn)}`}>
+                {formatReturn(cutReturn)}
+              </span>
+              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
+                Average T+1D Return
+              </span>
+            </motion.div>
+
+            {/* Hold Card */}
+            <motion.div
+              variants={safeScale}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+              className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
+                visibleSeries.hold ? 'opacity-100' : 'opacity-40'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-body text-xs font-semibold tracking-wider text-[var(--chart-hold)] uppercase">
+                  Policy Hold Averages
+                </span>
+                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
+                  N = {counts.hold}
+                </span>
+              </div>
+              <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${getReturnColorClass(holdReturn)}`}>
+                {formatReturn(holdReturn)}
+              </span>
+              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
+                Average T+1D Return
+              </span>
+            </motion.div>
+          </div>
+        )}
+
+        {/* STEP 4: Collapsible Methodology Note */}
+        <div className="border-t border-border-subtle pt-6 mt-4">
+          <button
+            onClick={() => setIsMethodologyOpen(!isMethodologyOpen)}
+            className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-[var(--accent-primary)] transition-colors select-none font-body uppercase tracking-widest cursor-pointer group"
+          >
+            <span>How this study is computed</span>
+            <ChevronDown 
+              size={14} 
+              className={`transform transition-transform duration-200 text-text-tertiary group-hover:text-text-primary ${
+                isMethodologyOpen ? 'rotate-180' : ''
+              }`} 
+            />
+          </button>
+
+          <motion.div
+            layout
+            initial={{ height: 0, opacity: 0 }}
+            animate={reduce ? { height: 'auto', opacity: 1 } : {
+              height: isMethodologyOpen ? 'auto' : 0,
+              opacity: isMethodologyOpen ? 1 : 0,
+            }}
+            transition={{ duration: reduce ? 0 : 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="overflow-hidden"
+          >
+            <div className="pt-4 text-sm text-text-secondary font-body leading-relaxed max-w-[75ch] space-y-4">
+              <p>
+                An <strong>Event Study</strong> isolates the impact of a specific recurring event type on asset prices.
+                We track the price behavior of the selected asset surrounding all historical RBI Monetary Policy Committee decisions since 2018.
+              </p>
+              <p>
+                <strong>1. Price Indexation:</strong> For each individual policy decision, the price path is scaled to 100 on the close of the Event Day (T0). Trading days are represented as T-2 to T+2, excluding market holidays and weekends.
+              </p>
+              <p>
+                <strong>2. Path Aggregation:</strong> The thick colored lines plot the arithmetic mean of these indexed paths, grouped by policy decision (Rate Hike, Rate Cut, or Policy Hold).
+              </p>
+              <p>
+                <strong>3. Shaded Confidence Bands:</strong> The low-opacity bands represent the ±1 standard deviation range around the mean, demonstrating the volatility and historical dispersion of individual outcomes within each decision group.
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
-      )}
-    </div>
+
+      </div>
     </PageWrapper>
   );
 }
