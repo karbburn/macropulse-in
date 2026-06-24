@@ -75,9 +75,9 @@ def compute_event_study(
 
         # Filter events by decision type
         if dec_type == "hike":
-            dec_events = [e for e in mpc_events if e.outcome.startswith("hike")]
+            dec_events = [e for e in mpc_events if e.outcome and e.outcome.startswith("hike")]
         elif dec_type == "cut":
-            dec_events = [e for e in mpc_events if e.outcome.startswith("cut")]
+            dec_events = [e for e in mpc_events if e.outcome and e.outcome.startswith("cut")]
         elif dec_type == "hold":
             dec_events = [e for e in mpc_events if e.outcome == "hold"]
         else:
