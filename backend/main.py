@@ -325,6 +325,7 @@ class ReportRequest(BaseModel):
     assets: list[str]
     include_scatter: bool
     include_study: bool
+    include_reaction: bool = False
 
 
 @app.post("/report")
