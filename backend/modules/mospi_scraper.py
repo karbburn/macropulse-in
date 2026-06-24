@@ -17,8 +17,11 @@ Rate limit: sleep(2) between requests — government servers are slow.
 import requests
 import time
 import re
+import logging
 from datetime import date, datetime
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 MOSPI_BASE = "https://mospi.gov.in"
 MOSPI_PRESS = "https://mospi.gov.in/web/mospi/press-releases"
@@ -43,7 +46,7 @@ def _post(url: str, json: dict, timeout: int = 15) -> Optional[requests.Response
         res.raise_for_status()
         return res
     except Exception as e:
-        print(f"[mospi_scraper] POST failed: {url} — {e}")
+        logger.warning(f"POST failed: {url} — {e}")
         return None
 
 
@@ -136,7 +139,7 @@ def scrape_latest_cpi_release() -> dict:
                     break
                     
     except Exception as e:
-        print(f"[mospi_scraper] CPI scrape failed: {e}")
+        logger.warning(f"CPI scrape failed: {e}")
     
     return result
 
@@ -199,7 +202,7 @@ def scrape_latest_iip_release() -> dict:
                     break
                     
     except Exception as e:
-        print(f"[mospi_scraper] IIP scrape failed: {e}")
+        logger.warning(f"IIP scrape failed: {e}")
     
     return result
 
@@ -228,13 +231,13 @@ def get_cpi_iip_with_fallback(rbi_dbie_module) -> dict:
         release = cpi_mospi["release_date"]
         if not release:
             release = cpi_mospi["reference_month"]
-            print("[mospi_scraper] WARNING: No release_date from MOSPI CPI, using reference_month as fallback")
+            logger.warning("No release_date from MOSPI CPI, using reference_month as fallback")
         cpi_result = {
             "actual": cpi_mospi["cpi_yoy"],
             "release_date": release,
             "source": "mospi"
         }
-        print(f"[mospi_scraper] CPI from MOSPI: {cpi_result['actual']}%")
+        logger.info(f"CPI from MOSPI: {cpi_result['actual']}%")
     else:
         dbie_cpi = rbi_dbie_module.get_latest_cpi()
         cpi_result = {
@@ -242,20 +245,20 @@ def get_cpi_iip_with_fallback(rbi_dbie_module) -> dict:
             "release_date": dbie_cpi["date"],
             "source": "rbi_dbie"
         }
-        print(f"[mospi_scraper] CPI fallback to RBI DBIE: {cpi_result['actual']}%")
+        logger.info(f"CPI fallback to RBI DBIE: {cpi_result['actual']}%")
     
     # IIP: same pattern
     if iip_mospi["iip_yoy"] is not None:
         release = iip_mospi["release_date"]
         if not release:
             release = iip_mospi["reference_month"]
-            print("[mospi_scraper] WARNING: No release_date from MOSPI IIP, using reference_month as fallback")
+            logger.warning("No release_date from MOSPI IIP, using reference_month as fallback")
         iip_result = {
             "actual": iip_mospi["iip_yoy"],
             "release_date": release,
             "source": "mospi"
         }
-        print(f"[mospi_scraper] IIP from MOSPI: {iip_result['actual']}%")
+        logger.info(f"IIP from MOSPI: {iip_result['actual']}%")
     else:
         dbie_iip = rbi_dbie_module.get_latest_iip()
         iip_result = {
@@ -263,6 +266,6 @@ def get_cpi_iip_with_fallback(rbi_dbie_module) -> dict:
             "release_date": dbie_iip["date"],
             "source": "rbi_dbie"
         }
-        print(f"[mospi_scraper] IIP fallback to RBI DBIE: {iip_result['actual']}%")
+        logger.info(f"IIP fallback to RBI DBIE: {iip_result['actual']}%")
     
     return {"cpi": cpi_result, "iip": iip_result}
