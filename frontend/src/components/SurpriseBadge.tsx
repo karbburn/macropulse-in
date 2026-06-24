@@ -17,7 +17,7 @@ export default function SurpriseBadge({ score }: SurpriseBadgeProps) {
         variants={safeScaleVariants}
         initial="hidden"
         animate="visible"
-        className="inline-flex items-center gap-1 rounded-full border-[1.5px] border-border-strong bg-bg-surface px-2.5 py-1 text-xs text-text-tertiary font-mono"
+        className="inline-flex items-center gap-1 rounded-[4px] border-[1.5px] border-border-strong bg-bg-surface px-2.5 py-1 text-xs text-text-tertiary font-mono"
       >
         -
 
@@ -48,7 +48,7 @@ export default function SurpriseBadge({ score }: SurpriseBadgeProps) {
       variants={safeScaleVariants}
       initial="hidden"
       animate="visible"
-      className={`inline-flex items-center gap-1 rounded-full border-[1.5px] px-2.5 py-1 text-xs font-mono ${badgeStyles}`}
+      className={`inline-flex items-center gap-1 rounded-[4px] border-[1.5px] px-2.5 py-1 text-xs font-mono ${badgeStyles}`}
     >
       {symbol} {formattedScore}
     </motion.span>
