@@ -39,31 +39,19 @@ const LinkedinIcon = ({ size = 12 }: { size?: number }) => (
 export function Footer() {
   return (
     <footer
-      style={{
-        borderTop: '1px solid var(--border-subtle)',
-        background: 'var(--bg-base)',
-        paddingTop: 'var(--space-6)',
-        paddingBottom: 'var(--space-6)',
-        paddingLeft: 'var(--space-8)',
-        paddingRight: 'var(--space-8)',
-        marginTop: 'var(--space-16)',
-      }}
+      className="border-t border-border-subtle bg-bg-base pt-6 pb-6 px-8 mt-16
+                 max-md:!px-4 max-md:mb-[72px]"
     >
       {/* ── Main row ── */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 'var(--space-6)',
-          flexWrap: 'wrap',
-        }}
+        className="flex justify-between items-start gap-6 flex-wrap
+                   max-md:flex-col max-md:items-center"
       >
-        {/* LEFT — Product identity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+        {/* LEFT — Product identity (order 3 on mobile) */}
+        <div className="flex flex-col gap-1 max-md:order-3">
           <span
             style={{
-              fontFamily: 'var(--font-display)',   // DM Serif Display
+              fontFamily: 'var(--font-display)',
               fontSize: 'var(--text-sm)',
               color: 'var(--text-secondary)',
               letterSpacing: '0',
@@ -76,7 +64,7 @@ export function Footer() {
           </span>
           <span
             style={{
-              fontFamily: 'var(--font-mono)',      // JetBrains Mono
+              fontFamily: 'var(--font-mono)',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-tertiary)',
               opacity: 0.7,
@@ -86,19 +74,13 @@ export function Footer() {
           </span>
         </div>
 
-        {/* CENTER — Builder credit */}
+        {/* CENTER — Builder credit (order 1 on mobile — top) */}
         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 'var(--space-1)',
-          }}
+          className="flex flex-col items-center gap-1 max-md:order-1"
         >
-          {/* "Built by Sourabh" — "Sourabh" is the clickable element */}
           <span
             style={{
-              fontFamily: 'var(--font-body)',      // Syne
+              fontFamily: 'var(--font-body)',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-tertiary)',
             }}
@@ -122,13 +104,12 @@ export function Footer() {
             </a>
           </span>
 
-          {/* Portfolio link as text label */}
           <a
             href="https://sourabh08.vercel.app/"
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              fontFamily: 'var(--font-mono)',      // JetBrains Mono
+              fontFamily: 'var(--font-mono)',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-tertiary)',
               textDecoration: 'none',
@@ -151,25 +132,18 @@ export function Footer() {
           </a>
         </div>
 
-        {/* RIGHT — Social links */}
+        {/* RIGHT — Social links (order 2 on mobile) */}
         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: 'var(--space-2)',
-          }}
+          className="flex flex-col items-end gap-2 max-md:order-2 max-md:items-center"
         >
           {/* GitHub */}
           <a
             href="https://github.com/karbburn"
             target="_blank"
             rel="noopener noreferrer"
+            className="flex items-center gap-1"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-1)',
-              fontFamily: 'var(--font-body)',      // Syne
+              fontFamily: 'var(--font-body)',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-tertiary)',
               textDecoration: 'none',
@@ -188,11 +162,9 @@ export function Footer() {
             href="https://www.linkedin.com/in/sourabh-pradhan07/"
             target="_blank"
             rel="noopener noreferrer"
+            className="flex items-center gap-1"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-1)',
-              fontFamily: 'var(--font-body)',      // Syne
+              fontFamily: 'var(--font-body)',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-tertiary)',
               textDecoration: 'none',

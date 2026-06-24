@@ -41,6 +41,20 @@ export default async function Page() {
   return (
     <PageWrapper>
       <div className="max-w-[860px] mx-auto px-4 md:px-0 pb-16">
+        {/* Mobile Wordmark */}
+        <div className="md:hidden mb-6">
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-xl)',
+              color: 'var(--accent-primary)',
+              letterSpacing: 'var(--tracking-tight)',
+            }}
+          >
+            MacroPulse
+          </span>
+        </div>
+
         {/* Ticker Strip (Desktop Only) */}
         <div className="flex h-10 items-center justify-end mb-6">
           {/* Infinite Scrolling Ticker (Desktop Only) */}

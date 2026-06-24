@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, BarChart3, Download, Search } from 'lucide-react'
+import { Home, BarChart3, Download } from 'lucide-react'
 import useSWR from 'swr'
 import { fetchLatestRates } from '@/lib/api'
 
@@ -162,30 +162,6 @@ export function NavBar() {
               </Link>
             )
           })}
-          {/* Search tab — non-navigating for now */}
-          <button
-            type="button"
-            className="flex flex-col items-center justify-center gap-1"
-            style={{
-              color: 'var(--text-tertiary)',
-              textDecoration: 'none',
-              transition: 'color 150ms ease-out',
-              minWidth: '64px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <Search size={18} strokeWidth={1.5} />
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-xs)',
-              }}
-            >
-              Search
-            </span>
-          </button>
         </div>
       </nav>
     </>
