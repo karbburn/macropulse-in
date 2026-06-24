@@ -311,7 +311,7 @@ body::after {
   /* On mobile, order: credit first, then branding, then links */
   footer > div:first-child > div:nth-child(1) { order: 3; }  /* branding */
   footer > div:first-child > div:nth-child(2) { order: 1; }  /* credit — top */
-  footer > div:first-child > div:nth-child(3) { order: 2; align-items: center; }  /* links */
+  footer > div:first-child > div:nth-child(3) { order: 2; align-items: flex-end !important; }  /* links */
 
   footer {
     padding-left: var(--space-4) !important;
