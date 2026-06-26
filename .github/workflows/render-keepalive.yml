@@ -2,7 +2,7 @@ name: Render Keep-Alive
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Ping Render health endpoint
         run: |
-          curl -sf https://macro-tracker-api.onrender.com/health || exit 1
+          curl -sf https://macropulse-api.onrender.com/health || exit 1
