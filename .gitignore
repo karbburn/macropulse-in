@@ -1,6 +1,10 @@
 # assets
 /assets/
 
+# Reference files
+/Reference files/
+/assets/
+
 # Planning artifacts
 .planning/
 
