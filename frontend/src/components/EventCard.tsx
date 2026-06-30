@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Gavel, TrendingUp, BarChart3 } from 'lucide-react';
 import { MacroEvent } from '../lib/types';
 import { formatOutcome, formatEventDate } from '../lib/format';
 import SurpriseBadge from './SurpriseBadge';
@@ -11,6 +11,25 @@ import { itemVariants, useSafeVariants } from '../lib/motion';
 interface EventCardProps {
   event: MacroEvent;
 }
+
+// Helper to get category-specific icon
+const getEventIcon = (type: string) => {
+  const iconProps = {
+    size: 14,
+    strokeWidth: 1.5,
+    className: "shrink-0",
+  };
+  switch (type) {
+    case 'MPC':
+      return <Gavel {...iconProps} />;
+    case 'CPI':
+      return <TrendingUp {...iconProps} />;
+    case 'IIP':
+      return <BarChart3 {...iconProps} />;
+    default:
+      return null;
+  }
+};
 
 // Deterministic client-side reaction generator to keep layout dense and high-fidelity
 function getDeterministicReactions(event: MacroEvent) {
@@ -88,31 +107,22 @@ export default function EventCard({ event }: EventCardProps) {
   const safeItemVariants = useSafeVariants(itemVariants);
   const reactions = getDeterministicReactions(event);
 
-  let accentBorderClass = '';
-  switch (event.event_type) {
-    case 'MPC':
-      accentBorderClass = 'border-l-[var(--accent-primary)] hover:border-l-[var(--accent-secondary)]';
-      break;
-    case 'CPI':
-      accentBorderClass = 'border-l-[var(--chart-usdinr)] hover:border-l-[var(--chart-usdinr)]/80';
-      break;
-    case 'IIP':
-      accentBorderClass = 'border-l-[var(--chart-gsec)] hover:border-l-[var(--chart-gsec)]/80';
-      break;
-    default:
-      accentBorderClass = 'border-l-border-subtle';
-  }
+  const eventColor = `var(--event-${event.event_type.toLowerCase()})`;
 
   return (
     <motion.div
       variants={safeItemVariants}
-      className={`group relative flex flex-col justify-between rounded-[4px] border border-border-subtle bg-bg-surface p-5 shadow-none transition-all duration-150 ease-out hover:bg-bg-elevated border-l-[3px] ${accentBorderClass} w-full`}
+      className="group relative flex flex-col justify-between rounded-[4px] border border-border-subtle bg-bg-surface pl-4 pr-5 py-4 shadow-none transition-all duration-150 ease-out hover:bg-bg-elevated w-full"
     >
       {/* Top Row: Meta and Badge */}
       <div className="flex items-center justify-between gap-4 mb-3">
         <div className="flex items-center gap-3">
-          <span className="font-body text-xs tracking-widest text-text-secondary font-semibold uppercase">
-            {event.event_type}
+          <span 
+            className="flex items-center gap-1.5 font-body text-xs tracking-widest font-semibold uppercase"
+            style={{ color: eventColor }}
+          >
+            {getEventIcon(event.event_type)}
+            <span>{event.event_type}</span>
           </span>
           <span className="text-text-tertiary font-mono text-xs">•</span>
           <span className="font-mono text-xs text-text-secondary">

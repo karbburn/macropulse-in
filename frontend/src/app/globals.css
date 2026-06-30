@@ -49,6 +49,11 @@
   --surprise-mid:   #c49a3c;
   --surprise-high:  #c0504a;
 
+  /* ── Event types (muted, warm-compatible tones) ── */
+  --event-mpc:      #C9A66B;   /* warm muted gold, slightly desaturated from amber accent */
+  --event-cpi:      #8B9DA8;   /* muted slate blue-gray, cool counterpoint, not bright blue */
+  --event-iip:      #A8927E;   /* warm taupe/clay, distinct without breaking warmth */
+
   /* ── Chart palette ── */
   --chart-nifty:    #c49a3c;
   --chart-usdinr:   #7eb3c4;
@@ -148,6 +153,10 @@
 
   --color-positive: #4a9e6e;
   --color-negative: #c0504a;
+
+  --color-event-mpc: #C9A66B;
+  --color-event-cpi: #8B9DA8;
+  --color-event-iip: #A8927E;
 
   --color-chart-nifty:  #c49a3c;
   --color-chart-usdinr: #7eb3c4;

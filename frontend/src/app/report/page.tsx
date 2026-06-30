@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, Gavel, TrendingUp, BarChart3 } from 'lucide-react';
 import { fetchEvents } from '../../lib/api';
 import { MacroEvent } from '../../lib/types';
 import { PageWrapper } from '../../components/PageWrapper';
@@ -307,15 +307,16 @@ export default function ReportPage() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span
-                                  className={`inline-flex rounded-[2px] border px-1.5 py-0.2 text-[9px] font-semibold bg-bg-base uppercase tracking-wider ${
-                                    event.event_type === 'MPC'
-                                      ? 'text-[var(--accent-primary)] border-[var(--accent-primary)]/20'
-                                      : event.event_type === 'CPI'
-                                      ? 'text-[var(--chart-usdinr)] border-[var(--chart-usdinr)]/20'
-                                      : 'text-[var(--chart-gsec)] border-[var(--chart-gsec)]/20'
-                                  }`}
+                                  className="inline-flex items-center gap-1 rounded-[2px] border px-1.5 py-0.5 text-[9px] font-semibold bg-bg-base uppercase tracking-wider"
+                                  style={{
+                                    color: `var(--event-${event.event_type.toLowerCase()})`,
+                                    borderColor: `var(--event-${event.event_type.toLowerCase()})33`,
+                                  }}
                                 >
-                                  {event.event_type}
+                                  {event.event_type === 'MPC' && <Gavel size={10} strokeWidth={1.5} />}
+                                  {event.event_type === 'CPI' && <TrendingUp size={10} strokeWidth={1.5} />}
+                                  {event.event_type === 'IIP' && <BarChart3 size={10} strokeWidth={1.5} />}
+                                  <span>{event.event_type}</span>
                                 </span>
                                 {event.outcome && (
                                   <span className="text-text-tertiary text-[10px] uppercase tracking-wide">
