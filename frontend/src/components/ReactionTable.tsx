@@ -13,7 +13,7 @@ const ASSET_ROWS = [
   { key: 'NIFTY', name: 'Nifty 50' },
   { key: 'USDINR', name: 'USD / INR' },
   { key: 'VIX', name: 'India VIX' },
-  { key: 'GSEC', name: '10Y G-Sec' },
+  { key: 'GSEC', name: 'Gilt Fund (10Y proxy)' },
 ] as const;
 
 export default function ReactionTable({ snapshots }: ReactionTableProps) {

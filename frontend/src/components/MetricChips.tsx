@@ -13,7 +13,7 @@ const ASSET_METADATA = {
   NIFTY: { label: 'NIFTY 50' },
   USDINR: { label: 'USD / INR' },
   VIX: { label: 'INDIA VIX' },
-  GSEC: { label: '10Y G-SEC' },
+  GSEC: { label: 'Gilt Fund (10Y proxy)' },
 } as const;
 
 export default function MetricChips({ snapshots }: MetricChipsProps) {
