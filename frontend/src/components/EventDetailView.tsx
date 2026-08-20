@@ -154,6 +154,7 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
           </span>
           <p className="font-body text-[11px] text-text-tertiary leading-snug max-w-[70ch]">
             The 10-year sovereign is shown as a gilt-fund proxy, whose value moves inversely to yields.
+            Older events use daily closes, so the intraday windows then coincide with the daily close.
           </p>
           <div className="rounded-[4px] border border-border-subtle bg-bg-surface p-5 hover:border-border-strong transition-colors">
             <ReactionLineChart snapshots={snapshots} />

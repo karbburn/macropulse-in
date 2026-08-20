@@ -90,6 +90,7 @@ export default function ReactionTable({ snapshots }: ReactionTableProps) {
                   </span>
                   <span className="text-[10px] text-text-tertiary font-mono block mt-0.5">
                     {row.key}
+                    {snapshot?.['T+2H']?.resolution ? ` · ${snapshot['T+2H'].resolution}` : ''}
                   </span>
                 </td>
 
