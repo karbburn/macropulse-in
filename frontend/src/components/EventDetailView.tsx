@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,10 +9,18 @@ import { EventDetail, MacroEvent } from '../lib/types';
 import { formatOutcome } from '../lib/format';
 import EventHeader from './EventHeader';
 import MetricChips from './MetricChips';
-import ReactionLineChart from './ReactionLineChart';
 import ReactionTable from './ReactionTable';
 import { useCountUp } from '../hooks/useCountUp';
 import { chartVariants, scaleVariants, useSafeVariants } from '../lib/motion';
+
+const ReactionLineChart = dynamic(() => import('./ReactionLineChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[220px] items-center justify-center md:h-[320px] text-text-tertiary font-body text-xs uppercase tracking-widest">
+      Loading chart…
+    </div>
+  ),
+});
 
 interface EventDetailViewProps {
   detail: EventDetail;

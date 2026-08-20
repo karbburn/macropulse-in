@@ -1,13 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { PageWrapper } from '../../components/PageWrapper';
 import { fetchScatter } from '../../lib/api';
 import { ScatterResponse } from '../../lib/types';
-import ScatterChart from '../../components/ScatterChart';
 import { scaleVariants, useSafeVariants } from '../../lib/motion';
+
+const ScatterChart = dynamic(() => import('../../components/ScatterChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[280px] items-center justify-center md:h-[400px] text-text-tertiary font-body text-xs uppercase tracking-widest">
+      Loading chart…
+    </div>
+  ),
+});
 
 const ASSETS = ['NIFTY', 'USDINR', 'VIX', 'GSEC'] as const;
 const EVENT_TYPES = ['all', 'CPI', 'IIP'] as const;

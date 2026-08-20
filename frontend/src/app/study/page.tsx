@@ -1,13 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { PageWrapper } from '../../components/PageWrapper';
 import { fetchStudy } from '../../lib/api';
 import { EventStudyPath } from '../../lib/types';
-import EventStudyChart, { StudySeries } from '../../components/EventStudyChart';
+import type { StudySeries } from '../../components/EventStudyChart';
 import { scaleVariants, useSafeVariants } from '../../lib/motion';
+
+const EventStudyChart = dynamic(() => import('../../components/EventStudyChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[280px] items-center justify-center md:h-[400px] text-text-tertiary font-body text-xs uppercase tracking-widest">
+      Loading chart…
+    </div>
+  ),
+});
 
 const ASSETS = ['NIFTY', 'USDINR', 'VIX', 'GSEC'] as const;
 const EVENT_TYPES = ['MPC', 'CPI', 'IIP'] as const;
