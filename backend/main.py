@@ -110,6 +110,15 @@ def latest_rates():
         nifty = {"price": None, "change_pct": None, "date": None}
         errors.append(f"nifty: {e}")
     
+    # Most recent data point across all indicators, for an "as of" label
+    date_candidates = [
+        repo.get("date"),
+        cpi.get("date"),
+        iip.get("date"),
+        nifty.get("date"),
+    ]
+    as_of = max((d for d in date_candidates if d), default=None)
+
     return {
         "repo_rate": repo["rate"],
         "repo_decision": repo["decision"],
@@ -121,6 +130,7 @@ def latest_rates():
         "nifty_price": nifty["price"],
         "nifty_change_pct": nifty["change_pct"],
         "nifty_date": nifty["date"],
+        "as_of": as_of,
         "error": "; ".join(errors) if errors else None,
     }
 

@@ -76,32 +76,77 @@ def get_latest_iip() -> dict:
 
 
 
+def _fetch_nifty_close() -> tuple[float, float, str] | None:
+    """
+    Attempt to fetch the latest Nifty 50 close + day-over-day change.
+    Returns (latest_close, prev_close, date_str) or None on failure.
+    """
+    # Primary: yfinance download
+    try:
+        df = yf.download("^NSEI", period="5d", interval="1d", progress=False, auto_adjust=False)
+        if not df.empty and "Close" in df.columns:
+            closes = df["Close"].dropna()
+            if len(closes) >= 1:
+                latest_close = float(closes.iloc[-1])
+                prev_close = float(closes.iloc[-2]) if len(closes) >= 2 else latest_close
+                return latest_close, prev_close, str(df.index[-1].date())
+    except Exception as e:
+        logger.warning(f"[live_rates] yfinance download error: {e}")
+
+    # Fallback: Ticker.history (different code path, sometimes more reliable)
+    try:
+        ticker = yf.Ticker("^NSEI")
+        hist = ticker.history(period="5d", interval="1d", auto_adjust=False)
+        if not hist.empty and "Close" in hist.columns:
+            closes = hist["Close"].dropna()
+            if len(closes) >= 1:
+                latest_close = float(closes.iloc[-1])
+                prev_close = float(closes.iloc[-2]) if len(closes) >= 2 else latest_close
+                return latest_close, prev_close, str(hist.index[-1].date())
+    except Exception as e:
+        logger.warning(f"[live_rates] yfinance Ticker.history error: {e}")
+
+    return None
+
+
 def get_latest_nifty() -> dict:
     """
-    Fetch latest Nifty 50 close price from yfinance.
+    Fetch latest Nifty 50 close price from yfinance, with retry + fallback.
     Use period="5d" interval="1d" to get recent daily closes.
     Take the last available close.
-    
+
     Return: { "price": 24532.15, "change_pct": 0.43, "date": "2025-06-06" }
     On any error, return: { "price": null, "change_pct": null, "date": null }
     """
-    try:
-        # time.sleep(1) removed — yfinance has internal rate limiting
-        df = yf.download("^NSEI", period="5d", interval="1d", progress=False)
-        if df.empty:
+    SLEEP = 1.0
+    for attempt in range(2):
+        try:
+            result = _fetch_nifty_close()
+            if result is None:
+                if attempt == 0:
+                    logger.warning("[live_rates] Nifty fetch returned no data, retrying once.")
+                    if SLEEP:
+                        import time
+                        time.sleep(SLEEP)
+                    continue
+                return {"price": None, "change_pct": None, "date": None}
+
+            latest_close, prev_close, latest_date = result
+            if latest_close is None or prev_close is None:
+                return {"price": None, "change_pct": None, "date": None}
+
+            change_pct = round(((latest_close - prev_close) / prev_close) * 100, 2)
+            return {
+                "price": round(latest_close, 2),
+                "change_pct": change_pct,
+                "date": latest_date,
+            }
+        except Exception as e:
+            logger.warning(f"[live_rates] yfinance error (attempt {attempt + 1}): {e}")
+            if attempt == 0 and SLEEP:
+                import time
+                time.sleep(SLEEP)
+                continue
             return {"price": None, "change_pct": None, "date": None}
-        
-        # yfinance Close can be a Series or a DataFrame depending on structure
-        latest_close = float(df["Close"].iloc[-1])
-        prev_close = float(df["Close"].iloc[-2]) if len(df) >= 2 else latest_close
-        change_pct = round(((latest_close - prev_close) / prev_close) * 100, 2)
-        latest_date = str(df.index[-1].date())
-        
-        return {
-            "price": round(latest_close, 2),
-            "change_pct": change_pct,
-            "date": latest_date
-        }
-    except Exception as e:
-        logger.warning(f"[live_rates] yfinance error: {e}")
-        return {"price": None, "change_pct": None, "date": None}
+
+    return {"price": None, "change_pct": None, "date": None}
