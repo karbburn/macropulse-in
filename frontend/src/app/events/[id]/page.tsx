@@ -48,12 +48,29 @@ export default async function Page({ params }: PageProps) {
       // Fail silently to not block rendering of the main event details
     }
 
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: `${detail.event.event_type} — ${detail.event.date}`,
+      startDate: detail.event.date,
+      description:
+        detail.event.notes ||
+        `MacroPulse event analysis: ${detail.event.event_type} on ${detail.event.date}`,
+      ...(detail.event.surprise_score != null
+        ? { additionalProperty: { surpriseSigma: detail.event.surprise_score } }
+        : {}),
+    };
+
     return (
       <PageWrapper>
-        <EventDetailView 
-          detail={detail} 
-          prevEvent={prevEvent} 
-          nextEvent={nextEvent} 
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <EventDetailView
+          detail={detail}
+          prevEvent={prevEvent}
+          nextEvent={nextEvent}
         />
       </PageWrapper>
     );

@@ -35,15 +35,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "MacroPulse - India Edition",
     description: "Analyze Indian macroeconomic event impacts on financial markets.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "MacroPulse - Track India's Economic Story",
-      },
-    ],
     type: "website",
+    siteName: "MacroPulse",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MacroPulse - India Edition",
+    description: "Analyze Indian macroeconomic event impacts on financial markets.",
   },
 };
 
@@ -64,6 +62,19 @@ export default function RootLayout({
       className={`${dmSerifDisplay.variable} ${syne.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'MacroPulse — India Edition',
+              url: 'https://macropulse-in.vercel.app',
+              description:
+                'Event-impact analytics for Indian macro markets: RBI MPC, CPI, and IIP surprise, reaction, and attribution.',
+            }),
+          }}
+        />
         <RatesProvider>
           <NavBar />
 
