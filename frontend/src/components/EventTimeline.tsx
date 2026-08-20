@@ -33,6 +33,7 @@ type TabType = 'ALL' | 'MPC' | 'CPI' | 'IIP';
 
 export default function EventTimeline({ initialEvents, initialError }: EventTimelineProps) {
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
+  const [search, setSearch] = useState('');
   const [isWarming, setIsWarming] = useState(false);
   const [events, setEvents] = useState<MacroEvent[]>(initialEvents);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,8 +83,14 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
   }, []);
 
   const filteredEvents = events.filter((e) => {
-    if (activeTab === 'ALL') return true;
-    return e.event_type === activeTab;
+    if (activeTab !== 'ALL' && e.event_type !== activeTab) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      e.id.toLowerCase().includes(q) ||
+      e.date.includes(q) ||
+      (e.notes != null && e.notes.toLowerCase().includes(q))
+    );
   });
 
   const groupedEvents: { [key: string]: MacroEvent[] } = {};
@@ -137,6 +144,15 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
               RANGE: 2018 – 2026 • ALL TIME
             </div>
           </div>
+        </div>
+        <div className="mt-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by ID, date, or note…"
+            className="w-full rounded-[4px] bg-bg-elevated border border-border-subtle px-3 py-2 text-sm text-text-primary placeholder-text-tertiary font-body focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+          />
         </div>
       </div>
 
