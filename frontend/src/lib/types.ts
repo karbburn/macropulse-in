@@ -50,6 +50,8 @@ export interface ScatterResponse {
     slope: number;
     intercept: number;
     r_squared: number;
+    p_value: number | null;
+    n: number;
   };
   message?: string;
 }

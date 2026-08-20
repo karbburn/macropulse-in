@@ -87,7 +87,9 @@ def compute_regression(points: list[ReactionPoint]) -> dict:
         return {
             "slope": 0.0,
             "intercept": 0.0,
-            "r_squared": 0.0
+            "r_squared": 0.0,
+            "p_value": None,
+            "n": len(points)
         }
     try:
         x = [p.surprise_score for p in points]
@@ -98,16 +100,21 @@ def compute_regression(points: list[ReactionPoint]) -> dict:
         r_squared = float(res.rvalue ** 2) if pd.notna(res.rvalue) else 0.0
         slope = float(res.slope) if pd.notna(res.slope) else 0.0
         intercept = float(res.intercept) if pd.notna(res.intercept) else 0.0
+        p_value = float(res.pvalue) if pd.notna(res.pvalue) else None
         
         return {
             "slope": round(slope, 4),
             "intercept": round(intercept, 4),
-            "r_squared": round(r_squared, 4)
+            "r_squared": round(r_squared, 4),
+            "p_value": p_value,
+            "n": len(points)
         }
     except Exception as e:
         logger.error(f"Error computing regression: {e}")
         return {
             "slope": 0.0,
             "intercept": 0.0,
-            "r_squared": 0.0
+            "r_squared": 0.0,
+            "p_value": None,
+            "n": len(points)
         }

@@ -91,6 +91,13 @@ export default function ScatterPage() {
   const slope = data?.regression.slope ?? 0;
   const r2 = data?.regression.r_squared ?? 0;
   const n = data?.points.length ?? 0;
+  const pValue = data?.regression.p_value ?? null;
+
+  const formatP = (p: number | null) => {
+    if (p === null || p === undefined) return '—';
+    if (p < 0.001) return '<0.001';
+    return p.toFixed(3);
+  };
 
   return (
     <PageWrapper>
@@ -130,12 +137,12 @@ export default function ScatterPage() {
           </div>
         ) : (
           <div className="rounded-[4px] border border-border-subtle bg-bg-surface p-5 md:p-6 hover:border-border-strong transition-colors">
-            <ScatterChart points={data?.points ?? []} regression={data?.regression ?? { slope: 0, intercept: 0, r_squared: 0 }} />
+            <ScatterChart points={data?.points ?? []} regression={data?.regression ?? { slope: 0, intercept: 0, r_squared: 0, p_value: null, n: 0 }} />
           </div>
         )}
 
         {!isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 w-full">
             <motion.div
               variants={safeScale}
               initial="hidden"
@@ -188,6 +195,24 @@ export default function ScatterPage() {
               </span>
               <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
                 Events plotted
+              </span>
+            </motion.div>
+
+            <motion.div
+              variants={safeScale}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+              className="rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300"
+            >
+              <span className="font-body text-xs font-semibold tracking-wider text-[var(--accent-primary)] uppercase">
+                p-value
+              </span>
+              <span className="font-mono text-3xl font-bold tracking-tight tabular-nums leading-none text-text-primary">
+                {formatP(pValue)}
+              </span>
+              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
+                Slope significance
               </span>
             </motion.div>
           </div>

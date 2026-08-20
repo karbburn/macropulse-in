@@ -19,7 +19,7 @@ import AnimatedChart from './AnimatedChart';
 
 interface ScatterChartProps {
   points: ScatterPoint[];
-  regression: { slope: number; intercept: number; r_squared: number };
+  regression: { slope: number; intercept: number; r_squared: number; p_value?: number | null; n?: number };
 }
 
 const TYPE_COLORS: Record<string, string> = {
