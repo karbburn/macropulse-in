@@ -208,7 +208,7 @@ export default function StudyPage() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, margin: '-60px' }}
-                  className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
+                  className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[132px] hover:border-border-strong transition-all duration-300 ${
                     visibleSeries[s.key] === false ? 'opacity-40' : 'opacity-100'
                   }`}
                 >
@@ -224,7 +224,15 @@ export default function StudyPage() {
                     {fmtReturn(ret)}
                   </span>
                   <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
-                    Average T+1D Return
+                    Avg T+1D Return
+                    {path.t1d_p_value !== null && path.t1d_p_value !== undefined ? (
+                      <span className={path.t1d_p_value < 0.05 ? ' text-[var(--positive)]' : ''}>
+                        {' · '}
+                        {path.t1d_p_value < 0.05
+                          ? `p=${path.t1d_p_value < 0.001 ? '<0.001' : path.t1d_p_value.toFixed(3)}`
+                          : `p=${path.t1d_p_value.toFixed(3)} ns`}
+                      </span>
+                    ) : null}
                   </span>
                 </motion.div>
               );
