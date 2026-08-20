@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link';
+
 // Custom inline SVG icons — lucide-react v1.21+ dropped brand icons (Github, Linkedin)
 const GithubIcon = ({ size = 12 }: { size?: number }) => (
   <svg
@@ -130,6 +132,31 @@ export function Footer() {
           >
             Portfolio ↗
           </a>
+
+            <Link
+              href="/methodology"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-tertiary)',
+                textDecoration: 'none',
+                opacity: 0.6,
+                transition: 'color 150ms ease-out, opacity 150ms ease-out',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = 'var(--accent-primary)'
+                e.currentTarget.style.opacity = '1'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = 'var(--text-tertiary)'
+                e.currentTarget.style.opacity = '0.6'
+              }}
+            >
+              Methodology ↗
+            </Link>
         </div>
 
         {/* RIGHT — Social links (order 2 on mobile) */}
