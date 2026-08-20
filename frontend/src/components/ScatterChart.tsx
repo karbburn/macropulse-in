@@ -89,7 +89,7 @@ export default function ScatterChart({ points, regression }: ScatterChartProps) 
 
   return (
     <AnimatedChart>
-      <div className="h-[280px] md:h-[400px] w-full relative select-none">
+      <div className="h-[280px] md:h-[400px] w-full relative select-none" role="img" aria-label="Scatter plot of consensus surprise against market reaction with regression line">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" opacity={0.5} />

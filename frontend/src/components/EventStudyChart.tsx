@@ -124,7 +124,7 @@ export default function EventStudyChart({
 
   return (
     <AnimatedChart>
-      <div className="h-[280px] md:h-[400px] w-full relative select-none">
+      <div className="h-[280px] md:h-[400px] w-full relative select-none" role="img" aria-label="Event study indexed price path around the event day">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" opacity={0.5} vertical={false} />

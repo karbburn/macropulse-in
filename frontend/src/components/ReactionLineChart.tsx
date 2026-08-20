@@ -105,7 +105,7 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
 
   return (
     <AnimatedChart>
-      <div className="h-[220px] md:h-[320px] w-full relative select-none">
+      <div className="h-[220px] md:h-[320px] w-full relative select-none" role="img" aria-label="Cross-asset reaction line chart across event windows">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
