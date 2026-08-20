@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
+import { RatesProvider } from "@/components/RatesProvider";
 
 
 const dmSerifDisplay = DM_Serif_Display({
@@ -63,16 +64,18 @@ export default function RootLayout({
       className={`${dmSerifDisplay.variable} ${syne.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NavBar />
+        <RatesProvider>
+          <NavBar />
 
-        {/* Main Content — pb-20 on mobile for bottom tab bar clearance */}
-        <main className="flex-1 pb-20 md:pb-0">
-          <AnimatePresence mode="wait">
-            {children}
-          </AnimatePresence>
-        </main>
+          {/* Main Content — pb-20 on mobile for bottom tab bar clearance */}
+          <main className="flex-1 pb-20 md:pb-0">
+            <AnimatePresence mode="wait">
+              {children}
+            </AnimatePresence>
+          </main>
 
-        <Footer />
+          <Footer />
+        </RatesProvider>
 
       </body>
     </html>

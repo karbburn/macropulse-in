@@ -74,6 +74,7 @@ export interface LatestRates {
   nifty_price:      number | null;
   nifty_change_pct: number | null;
   nifty_date:       string | null;
+  as_of:            string | null;
   error:            string | null;
 }
 
