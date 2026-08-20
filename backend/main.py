@@ -11,6 +11,8 @@ Endpoints:
 """
 
 import asyncio
+import csv
+import io
 import logging
 from datetime import date
 from typing import Optional
@@ -346,6 +348,105 @@ class ReportRequest(BaseModel):
     include_scatter: bool
     include_study: bool
     include_reaction: bool = False
+
+
+@app.get("/export/events")
+def export_events(
+    event_type: str = Query(default="all", description="Filter by event type: MPC, CPI, IIP, or all"),
+    from_date: Optional[str] = Query(default=None, description="Start date filter (YYYY-MM-DD)"),
+    to_date: Optional[str] = Query(default=None, description="End date filter (YYYY-MM-DD)"),
+) -> StreamingResponse:
+    """
+    Returns all matching events as a downloadable CSV.
+    """
+    event_type = event_type.upper()
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Error loading events for export: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load events")
+
+    parsed_from = parsed_to = None
+    if from_date:
+        try:
+            parsed_from = date.fromisoformat(from_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid from_date: '{from_date}'. Use YYYY-MM-DD.")
+    if to_date:
+        try:
+            parsed_to = date.fromisoformat(to_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid to_date: '{to_date}'. Use YYYY-MM-DD.")
+
+    filtered = filter_events(
+        events=all_events,
+        event_type=event_type if event_type != "all" else None,
+        from_date=parsed_from,
+        to_date=parsed_to,
+        limit=500,
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "event_type", "date", "time", "outcome", "actual", "consensus", "surprise_score", "notes"])
+    for e in filtered:
+        writer.writerow([
+            e.id, e.event_type, e.date.isoformat(),
+            e.time.isoformat() if e.time else "",
+            e.outcome or "", e.actual if e.actual is not None else "",
+            e.consensus if e.consensus is not None else "",
+            e.surprise_score if e.surprise_score is not None else "",
+            e.notes or "",
+        ])
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=macropulse-events-{date.today().isoformat()}.csv"},
+    )
+
+
+@app.get("/export/event/{event_id}")
+def export_event(event_id: str) -> StreamingResponse:
+    """
+    Returns the cross-asset reaction snapshots for a single event as a CSV.
+    """
+    event = get_event_by_id(event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
+
+    try:
+        snapshots = get_all_snapshots(event)
+    except Exception as e:
+        logger.error(f"Error computing snapshots for export {event_id}: {e}")
+        snapshots = {"NIFTY": None, "USDINR": None, "VIX": None, "GSEC": None}
+
+    windows = ["T-60", "T0", "T+30", "T+2H", "T+1D"]
+    assets = ["NIFTY", "USDINR", "VIX", "GSEC"]
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["asset", "window", "price", "pct_change_from_T60", "resolution"])
+    for asset in assets:
+        snap = snapshots.get(asset)
+        if not snap:
+            continue
+        for window in windows:
+            wd = snap.get(window)
+            if not wd:
+                continue
+            writer.writerow([
+                asset, window,
+                wd.get("price") if wd.get("price") is not None else "",
+                wd.get("pct_change_from_T60") if wd.get("pct_change_from_T60") is not None else "",
+                wd.get("resolution") or "",
+            ])
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=macropulse-{event_id}-snapshots.csv"},
+    )
 
 
 @app.post("/report")

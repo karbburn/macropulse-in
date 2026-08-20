@@ -125,8 +125,17 @@ export default function EventTimeline({ initialEvents, initialError }: EventTime
       <div className="sticky top-0 md:top-[56px] z-40 bg-bg-base/90 backdrop-blur-md py-3 border-b border-border-subtle/40 mb-8">
         <div className="flex items-center justify-between gap-4 w-full">
           <FilterTabs active={activeTab} onChange={(tab) => setActiveTab(tab as TabType)} />
+          <div className="flex items-center gap-4">
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/export/events?event_type=${activeTab === 'ALL' ? 'all' : activeTab}`}
+              download
+              className="font-body text-xs tracking-widest uppercase text-text-tertiary hover:text-[var(--accent-primary)] transition-colors select-none cursor-pointer"
+            >
+              Export CSV
+            </a>
             <div className="font-body text-xs text-text-tertiary tracking-widest hidden sm:block">
-            RANGE: 2018 – 2026 • ALL TIME
+              RANGE: 2018 – 2026 • ALL TIME
+            </div>
           </div>
         </div>
       </div>

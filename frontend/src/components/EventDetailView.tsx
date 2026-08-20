@@ -222,9 +222,18 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
       </div>
 
       <div className="w-full flex flex-col gap-3 mt-4">
-        <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
-          Cross-Asset Reaction Matrix
-        </span>
+        <div className="flex items-center justify-between gap-4">
+          <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
+            Cross-Asset Reaction Matrix
+          </span>
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/export/event/${event.id}`}
+            download
+            className="font-body text-xs tracking-widest uppercase text-text-tertiary hover:text-[var(--accent-primary)] transition-colors select-none cursor-pointer"
+          >
+            Export CSV
+          </a>
+        </div>
         <ReactionTable snapshots={snapshots} />
       </div>
 
