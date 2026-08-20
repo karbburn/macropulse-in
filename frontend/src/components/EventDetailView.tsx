@@ -152,6 +152,10 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
           <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
             Cross-Asset Reaction Window
           </span>
+          <p className="font-body text-[11px] text-text-tertiary leading-snug max-w-[70ch]">
+            The 10-year sovereign is shown as a gilt-fund proxy, whose value moves inversely to yields.
+            Older events use daily closes, so the intraday windows then coincide with the daily close.
+          </p>
           <div className="rounded-[4px] border border-border-subtle bg-bg-surface p-5 hover:border-border-strong transition-colors">
             <ReactionLineChart snapshots={snapshots} />
           </div>
@@ -173,7 +177,13 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
                   Surprise Deviation
                 </span>
                 <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider mt-1">
-                  Historical volatility metric
+                  {event.surprise_method === 'trailing_mean'
+                    ? 'vs trailing 6-mo mean'
+                    : event.surprise_method === 'consensus_raw'
+                    ? 'raw miss vs consensus (pp)'
+                    : event.surprise_method === 'consensus_sigma'
+                    ? 'vs consensus, σ-scaled'
+                    : 'Historical volatility metric'}
                 </span>
               </div>
               <div className="flex flex-col items-end">

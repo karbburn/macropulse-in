@@ -61,7 +61,7 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
     { key: 'NIFTY', name: 'Nifty 50', color: 'var(--chart-nifty)' },
     { key: 'USDINR', name: 'USD / INR', color: 'var(--chart-usdinr)' },
     { key: 'VIX', name: 'India VIX', color: 'var(--chart-vix)' },
-    { key: 'GSEC', name: '10Y G-Sec', color: 'var(--chart-gsec)' },
+    { key: 'GSEC', name: 'Gilt Fund (10Y proxy)', color: 'var(--chart-gsec)' },
   ];
 
   const CustomTooltip = ({ active, payload, label }: any) => {

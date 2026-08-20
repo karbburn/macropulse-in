@@ -10,6 +10,7 @@ from dataclasses import dataclass, asdict
 from datetime import date, timedelta
 import pandas as pd
 import numpy as np
+from scipy.stats import ttest_1samp
 
 from modules.event_calendar import MacroEvent
 from modules.market_snapshot import get_yfinance_data, TICKERS
@@ -26,6 +27,7 @@ class EventStudyPath:
     upper_band: list[float]    # mean + 1 std
     lower_band: list[float]    # mean - 1 std
     event_count: int
+    t1d_p_value: float | None = None  # Significance of the T+1D mean vs 100
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -190,6 +192,16 @@ def compute_event_study(
         upper_list = [round(float(mean_indexed[i] + std_indexed[i]), 4) for i in range(5)]
         lower_list = [round(float(mean_indexed[i] - std_indexed[i]), 4) for i in range(5)]
 
+        # Significance of the T+1D average (index 3 of [-2,-1,0,1,2]) vs the 100 baseline
+        t1d_p_value = None
+        if paths_arr.shape[0] >= 2:
+            try:
+                res = ttest_1samp(paths_arr[:, 3], 100.0)
+                t1d_p_value = float(res.pvalue) if pd.notna(res.pvalue) else None
+            except Exception as e:
+                logger.warning(f"T+1D significance test failed for {asset}/{dec_type}: {e}")
+                t1d_p_value = None
+
         path_obj = EventStudyPath(
             decision_type=dec_type,
             asset=asset,
@@ -197,7 +209,8 @@ def compute_event_study(
             mean_indexed=mean_list,
             upper_band=upper_list,
             lower_band=lower_list,
-            event_count=len(paths)
+            event_count=len(paths),
+            t1d_p_value=t1d_p_value
         )
 
         # Cache the result

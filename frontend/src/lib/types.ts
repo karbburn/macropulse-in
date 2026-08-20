@@ -7,6 +7,7 @@ export interface MacroEvent {
   actual: number | null;
   consensus: number | null;
   surprise_score: number | null;
+  surprise_method: string | null;
   notes: string | null;
 }
 
@@ -49,18 +50,21 @@ export interface ScatterResponse {
     slope: number;
     intercept: number;
     r_squared: number;
+    p_value: number | null;
+    n: number;
   };
   message?: string;
 }
 
 export interface EventStudyPath {
-  decision_type: 'hike' | 'cut' | 'hold';
+  decision_type: 'hike' | 'cut' | 'hold' | 'above' | 'below';
   asset: string;
   days: number[];
   mean_indexed: number[];
   upper_band: number[];
   lower_band: number[];
   event_count: number;
+  t1d_p_value: number | null;
 }
 
 export interface LatestRates {

@@ -221,11 +221,13 @@ def compute_surprise_score(
         con = get_consensus(event, finnhub_key, consensus_df, finnhub_batch)
     
     # IIP consensus is trailing 6-month mean actuals
+    used_trailing_mean = False
     if event.event_type == "IIP" and con is None:
         trailing = [e for e in all_events if e.event_type == "IIP" and e.date < event.date and e.actual is not None]
         trailing.sort(key=lambda e: e.date, reverse=True)
         if len(trailing) >= 1:
             con = sum(e.actual for e in trailing[:6]) / min(len(trailing), 6)
+            used_trailing_mean = True
 
     # Set the resolved consensus back to the object for reference
     if con is not None:
@@ -233,11 +235,13 @@ def compute_surprise_score(
 
     if con is None or event.actual is None:
         return None
-        
+
     raw_surprise = event.actual - con
-    
+
     hist_std = compute_historical_std(event, all_events)
     if hist_std is None or hist_std == 0:
+        event.surprise_method = "consensus_raw"
         return round(raw_surprise, 4)
-        
+
+    event.surprise_method = "trailing_mean" if used_trailing_mean else "consensus_sigma"
     return round(raw_surprise / hist_std, 4)

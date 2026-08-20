@@ -35,6 +35,7 @@ class MacroEvent:
     actual: float | None                # Numeric actual value
     consensus: float | None             # Consensus estimate (None if unavailable)
     surprise_score: float | None        # Computed: (actual - consensus) / hist_std
+    surprise_method: str | None = None  # How the score was derived (transparency)
     notes: str | None                   # E.g. "Unanimous decision" or "Monsoon CPI spike"
 
     def to_dict(self) -> dict:
