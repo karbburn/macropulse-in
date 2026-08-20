@@ -1,37 +1,49 @@
-<div align="center">
-
 # MacroPulse — India Edition
 
-**Bloomberg-grade macro event analysis, built with free APIs and open data.**
+**Event-impact analytics for Indian macro markets.**
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed_on-Vercel-black?style=flat-square&logo=vercel)](https://macropulse-in.vercel.app)
-[![Backend on Render](https://img.shields.io/badge/Backend_on-Render-blue?style=flat-square&logo=render)](https://macro-tracker-api.onrender.com)
+MacroPulse quantifies how Indian financial markets respond to macroeconomic
+events. It charts the reaction of Nifty 50, USD/INR, 10Y G-Sec yields, and
+India VIX across defined windows around RBI MPC decisions, CPI prints, and IIP
+releases — formalizing the institutional analyst's workflow of
+*event → surprise → reaction → attribution*. No account required. Built
+entirely on free APIs and open data.
+
+[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?style=flat-square&logo=vercel)](https://macropulse-in.vercel.app)
+[![Backend](https://img.shields.io/badge/Backend-Render-blue?style=flat-square&logo=render)](https://macropulse-in.onrender.com)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![License](https://img.shields.io/badge/License-None-gray?style=flat-square)](#license)
-
-</div>
 
 ---
 
-## About
+## Overview
 
-MacroPulse is a free web application that automatically plots how Indian financial markets — Nifty 50, USD/INR, G-Sec yields, and India VIX — react in defined time windows around macro events. It covers RBI MPC decisions, CPI prints, and IIP releases, replicating the core analytical workflow of institutional Bloomberg terminals: **event → surprise → reaction → attribution**. No login required. Built entirely with free APIs and open data.
+MacroPulse covers three recurring event classes — RBI monetary policy (MPC),
+consumer inflation (CPI), and industrial output (IIP) — spanning 2018 to
+present. For each event it computes a standardized *surprise* (actual versus
+consensus, normalized by historical dispersion) and measures the subsequent
+market reaction across five time windows, from T-60 minutes to T+1 trading day.
+Aggregated event studies and surprise-versus-reaction regressions provide the
+cross-sectional view an analyst would use to separate signal from noise.
 
-## Features
+## Capabilities
 
-- **Event Timeline** — Chronological view of all RBI MPC decisions, CPI prints, and IIP releases since 2018, filterable by type
-- **Live Ticker Strip** — Real-time display of current repo rate, CPI, IIP, and Nifty price
-- **Event Detail View** — Per-event drill-down with cross-asset snapshots at five time windows (T-60min to T+1day)
-- **Surprise Scoring** — Actual vs. consensus comparison normalized by historical standard deviation
-- **Event Study Analysis** — Average indexed market path grouped by hike/cut/hold with confidence bands
-- **Scatter Plot & Regression** — Surprise vs. reaction with linear regression for CPI and IIP events
-- **PDF Report Builder** — Select events and assets, toggle sections, download a publication-ready PDF
-- **Responsive Design** — Desktop sticky nav with inline links; mobile bottom tab bar
-- **Animated Transitions** — Framer Motion-powered page transitions, card animations, and stagger effects
-- **Zero Paid APIs** — All data sourced from yfinance, data.gov.in, and manually curated CSVs
+- **Event timeline** — Chronological, filterable view of all MPC, CPI, and IIP
+  releases since 2018.
+- **Live rate strip** — Current repo rate, CPI, IIP, and Nifty level.
+- **Event detail** — Per-event drill-down with cross-asset snapshots at five
+  reaction windows (T-60m → T+1d).
+- **Surprise scoring** — Actual-vs-consensus, normalized by historical standard
+  deviation.
+- **Event study** — Average indexed path by policy action (hike / cut / hold)
+  with confidence bands.
+- **Scatter & regression** — Surprise against reaction, with OLS fit for CPI and
+  IIP.
+- **PDF reports** — Publication-ready exports with selectable events, assets,
+  and sections.
+- **Responsive interface** — Desktop sticky navigation; mobile tab bar.
 
-## Tech Stack
+## Architecture
 
 ### Frontend
 
@@ -40,13 +52,13 @@ MacroPulse is a free web application that automatically plots how Indian financi
 | Next.js | 16 |
 | React | 19 |
 | TypeScript | ^5 |
-| Tailwind CSS | v4 (CSS-first config) |
+| Tailwind CSS | v4 (CSS-first) |
 | Recharts | ^3.8 |
 | Framer Motion | ^12 |
 | SWR | ^2.4 |
 | Lucide React | ^1.21 |
 
-**Fonts:** DM Serif Display · Syne · JetBrains Mono
+*Typefaces:* DM Serif Display · Syne · JetBrains Mono
 
 ### Backend
 
@@ -60,14 +72,15 @@ MacroPulse is a free web application that automatically plots how Indian financi
 | ReportLab | 4.2 |
 | Supabase | 2.4 |
 
-### Data Sources
+### Data sources
 
-- **yfinance** — Intraday and daily price data for NIFTY 50, USD/INR, India VIX, 10Y G-Sec
-- **Supabase** — Event cache and pre-computed snapshots
-- **Manual CSVs** — RBI MPC calendar (2018–present) and consensus estimates
-- **data.gov.in** — Indian government economic data
+- **yfinance** — Intraday and daily prices for Nifty 50, USD/INR, India VIX,
+  10Y G-Sec.
+- **Supabase** — Event cache and pre-computed snapshots.
+- **Curated CSVs** — RBI MPC calendar (2018–present) and consensus estimates.
+- **data.gov.in** — Indian government economic statistics.
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
@@ -103,65 +116,65 @@ docker build -t macropulse-api .
 docker run -p 8000:8000 --env-file .env macropulse-api
 ```
 
-## Project Structure
+## Repository layout
 
 ```
 MacroPulse/
 ├── backend/
-│   ├── main.py                    # FastAPI app + route definitions
+│   ├── main.py                    # FastAPI app + routes
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   ├── data/
 │   │   ├── mpc_calendar.csv       # RBI MPC decisions (2018–present)
 │   │   └── consensus.csv          # CPI/IIP actual vs consensus
 │   └── modules/
-│       ├── event_calendar.py      # Load + merge macro events
+│       ├── event_calendar.py      # Event load + merge
 │       ├── market_snapshot.py     # yfinance intraday data
 │       ├── reaction.py            # Reaction points + regression
-│       ├── surprise.py            # Surprise score calculator
-│       ├── event_study.py         # Event study paths
+│       ├── surprise.py            # Surprise score
+│       ├── event_study.py         # Event-study paths
 │       ├── live_rates.py          # Latest repo rate, CPI, IIP, Nifty
-│       ├── pdf_generator.py       # Server-side PDF generation
-│       └── cache.py               # Supabase caching layer
+│       ├── pdf_generator.py       # Server-side PDF
+│       └── cache.py               # Supabase cache
 ├── frontend/
 │   └── src/
 │       ├── app/
-│       │   ├── page.tsx           # Home — Event Timeline + Ticker
-│       │   ├── study/page.tsx     # Event Study — Hike/Cut/Hold paths
-│       │   ├── report/page.tsx    # PDF Report Builder
-│       │   └── events/[id]/       # Per-event detail with snapshots
+│       │   ├── page.tsx           # Home — timeline + ticker
+│       │   ├── study/page.tsx     # Event study
+│       │   ├── report/page.tsx    # PDF builder
+│       │   └── events/[id]/       # Event detail
 │       ├── components/
-│       │   ├── NavBar.tsx         # Desktop sticky nav + mobile tabs
-│       │   ├── EventTimeline.tsx  # Main timeline with filters
+│       │   ├── NavBar.tsx
+│       │   ├── EventTimeline.tsx
 │       │   ├── EventStudyChart.tsx
 │       │   ├── ReactionLineChart.tsx
 │       │   ├── Footer.tsx
 │       │   └── ...
 │       └── lib/
-│           ├── api.ts             # Backend API client
-│           ├── types.ts           # TypeScript interfaces
+│           ├── api.ts             # API client
+│           ├── types.ts           # Interfaces
 │           └── motion.ts          # Framer Motion variants
 ├── .github/workflows/
-│   ├── nightly_precompute.yml     # Daily snapshot precomputation
-│   └── render-keepalive.yml       # Pings /health every 10 min
+│   ├── nightly_precompute.yml     # Daily snapshot precompute
+│   └── render-keepalive.yml       # /health ping every 5 min
 └── assets/
     ├── macropulse-DESIGN.md       # Design system
     └── macro-tracker-TECHSPEC.md  # Technical specification
 ```
 
-## API Reference
+## API reference
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/health` | Health check |
-| `GET` | `/api/latest-rates` | Latest repo rate, CPI, IIP, Nifty price |
-| `GET` | `/events` | List events (filter: `event_type`, `from_date`, `to_date`, `limit`) |
-| `GET` | `/events/{event_id}` | Full event detail with market snapshots |
-| `GET` | `/scatter` | Surprise vs. reaction scatter + regression (`asset`, `event_type`) |
-| `GET` | `/study` | Event study paths with confidence bands (`asset`) |
-| `POST` | `/report` | Generate PDF report (`event_ids`, `assets`, `include_scatter`, `include_study`) |
+| `GET` | `/api/latest-rates` | Latest repo rate, CPI, IIP, Nifty |
+| `GET` | `/events` | List events (`event_type`, `from_date`, `to_date`, `limit`) |
+| `GET` | `/events/{event_id}` | Event detail + snapshots |
+| `GET` | `/scatter` | Surprise vs reaction (`asset`, `event_type`) |
+| `GET` | `/study` | Event-study paths (`asset`) |
+| `POST` | `/report` | PDF report (`event_ids`, `assets`, `include_scatter`, `include_study`) |
 
-## Environment Variables
+## Configuration
 
 ### Backend (`backend/.env`)
 
@@ -169,30 +182,23 @@ MacroPulse/
 |---|---|
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_KEY` | Supabase anon/service key |
-| `FINNHUB_API_KEY` | Finnhub API key (free tier, optional) |
-| `DATAGOV_API_KEY` | data.gov.in API key (optional) |
+| `FINNHUB_API_KEY` | Finnhub key (free tier, optional) |
+| `DATAGOV_API_KEY` | data.gov.in key (optional) |
 
 ### Frontend (`frontend/.env.local`)
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL (default: `http://localhost:8000`) |
+| `NEXT_PUBLIC_API_URL` | Backend base URL (default: `http://localhost:8000`) |
 
 ## Deployment
 
-**Frontend — Vercel:** [macropulse-in.vercel.app](https://macropulse-in.vercel.app)
+- **Frontend — Vercel:** [macropulse-in.vercel.app](https://macropulse-in.vercel.app)
+- **Backend — Render:** [macropulse-in.onrender.com](https://macropulse-in.onrender.com)
 
-**Backend — Render:** [macro-tracker-api.onrender.com](https://macro-tracker-api.onrender.com)
-
-**GitHub Actions:**
-- `nightly_precompute.yml` — Pre-computes market snapshots daily at 07:00 IST
-- `render-keepalive.yml` — Pings `/health` every 10 minutes to prevent cold start
-
-## Design Philosophy
-
-> *MacroPulse is not a dashboard. It is an analytical instrument — the kind a macro strategist at a hedge fund would actually use.*
->
-> **Precise. Dense. Editorial.** Data is the hero. Whitespace is earned. Typography carries weight over decoration. Numbers are always monospaced, tabular, and right-aligned. Nothing moves unless it means something.
+**CI:**
+- `nightly_precompute.yml` — Pre-computes snapshots daily at 07:00 IST.
+- `render-keepalive.yml` — Pings `/health` every 5 minutes to avoid cold starts.
 
 ## Author
 
@@ -204,4 +210,4 @@ MacroPulse/
 
 ## License
 
-No license. All rights reserved.
+All rights reserved. No license granted.
