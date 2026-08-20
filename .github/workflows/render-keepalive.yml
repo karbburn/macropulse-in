@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Ping Render health endpoint
         run: |
-          curl -sf https://macropulse-api.onrender.com/health || exit 1
+          curl -sf https://macropulse-in.onrender.com/health || exit 1

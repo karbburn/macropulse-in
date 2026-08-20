@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,10 +9,18 @@ import { EventDetail, MacroEvent } from '../lib/types';
 import { formatOutcome } from '../lib/format';
 import EventHeader from './EventHeader';
 import MetricChips from './MetricChips';
-import ReactionLineChart from './ReactionLineChart';
 import ReactionTable from './ReactionTable';
 import { useCountUp } from '../hooks/useCountUp';
 import { chartVariants, scaleVariants, useSafeVariants } from '../lib/motion';
+
+const ReactionLineChart = dynamic(() => import('./ReactionLineChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[220px] items-center justify-center md:h-[320px] text-text-tertiary font-body text-xs uppercase tracking-widest">
+      Loading chart…
+    </div>
+  ),
+});
 
 interface EventDetailViewProps {
   detail: EventDetail;
@@ -59,6 +68,19 @@ const getSurpriseContext = (eventType: string, score: number | null, outcome: st
   }
 
   return "Unexpected macro print — market analyzing implications.";
+};
+
+const getSource = (eventType: string): { label: string; url: string } => {
+  switch (eventType) {
+    case 'MPC':
+      return { label: 'RBI Press Release', url: 'https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx' };
+    case 'CPI':
+      return { label: 'MOSPI — CPI', url: 'https://www.mospi.gov.in/web/mospi/cpi' };
+    case 'IIP':
+      return { label: 'MOSPI — IIP', url: 'https://www.mospi.gov.in/web/mospi/iip' };
+    default:
+      return { label: 'Data Source', url: 'https://www.mospi.gov.in/' };
+  }
 };
 
 export default function EventDetailView({ detail, prevEvent, nextEvent }: EventDetailViewProps) {
@@ -209,7 +231,10 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
 
             <hr className="border-border-subtle/60" />
 
-            <div className="flex flex-col gap-2">
+            <div
+              className="flex flex-col gap-2 rounded-[4px] border border-border-subtle border-l-2 px-4 py-3"
+              style={{ borderLeftColor: 'var(--accent-primary)' }}
+            >
               <span className="font-body text-xs text-text-tertiary uppercase tracking-wider">
                 Macroeconomic Assessment
               </span>
@@ -217,14 +242,32 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
                 {getSurpriseContext(event.event_type, event.surprise_score, event.outcome || '')}
               </p>
             </div>
+
+            <a
+              href={getSource(event.event_type).url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-body text-xs text-text-tertiary hover:text-[var(--accent-primary)] transition-colors select-none"
+            >
+              Source: {getSource(event.event_type).label} ↗
+            </a>
           </div>
         </motion.div>
       </div>
 
       <div className="w-full flex flex-col gap-3 mt-4">
-        <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
-          Cross-Asset Reaction Matrix
-        </span>
+        <div className="flex items-center justify-between gap-4">
+          <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
+            Cross-Asset Reaction Matrix
+          </span>
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/export/event/${event.id}`}
+            download
+            className="font-body text-xs tracking-widest uppercase text-text-tertiary hover:text-[var(--accent-primary)] transition-colors select-none cursor-pointer"
+          >
+            Export CSV
+          </a>
+        </div>
         <ReactionTable snapshots={snapshots} />
       </div>
 

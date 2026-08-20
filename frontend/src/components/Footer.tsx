@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link';
+
 // Custom inline SVG icons — lucide-react v1.21+ dropped brand icons (Github, Linkedin)
 const GithubIcon = ({ size = 12 }: { size?: number }) => (
   <svg
@@ -130,6 +132,31 @@ export function Footer() {
           >
             Portfolio ↗
           </a>
+
+            <Link
+              href="/methodology"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-tertiary)',
+                textDecoration: 'none',
+                opacity: 0.6,
+                transition: 'color 150ms ease-out, opacity 150ms ease-out',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = 'var(--accent-primary)'
+                e.currentTarget.style.opacity = '1'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = 'var(--text-tertiary)'
+                e.currentTarget.style.opacity = '0.6'
+              }}
+            >
+              Methodology ↗
+            </Link>
         </div>
 
         {/* RIGHT — Social links (order 2 on mobile) */}
@@ -176,6 +203,46 @@ export function Footer() {
           >
             <LinkedinIcon size={12} />
             LinkedIn ↗
+          </a>
+
+          {/* API docs */}
+          <a
+            href="https://macropulse-in.onrender.com/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-tertiary)',
+              textDecoration: 'none',
+              letterSpacing: 'var(--tracking-wide)',
+              transition: 'color 150ms ease-out',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+          >
+            API ↗
+          </a>
+
+          {/* RSS */}
+          <a
+            href="https://macropulse-in.onrender.com/rss"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-tertiary)',
+              textDecoration: 'none',
+              letterSpacing: 'var(--tracking-wide)',
+              transition: 'color 150ms ease-out',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+          >
+            RSS ↗
           </a>
         </div>
       </div>

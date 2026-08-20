@@ -34,31 +34,60 @@ class EventStudyPath:
 def compute_event_study(
     events: list[MacroEvent],
     asset: str,
+    event_type: str = "MPC",
     decision_types: list[str] | None = None
 ) -> list[EventStudyPath]:
     """
-    Computes average indexed close price paths for NIFTY or USDINR
-    around MPC rate hike, cut, or hold decisions.
-    """
-    if decision_types is None:
-        decision_types = ["hike", "cut", "hold"]
+    Computes average indexed close price paths for NIFTY, USDINR, VIX, or GSEC
+    around macro events.
 
+    For MPC, events are grouped by policy action (hike / cut / hold).
+    For CPI and IIP, events are grouped by consensus surprise direction
+    (above / below consensus).
+    """
     asset = asset.upper()
+    event_type = event_type.upper()
     ticker = TICKERS.get(asset)
     if not ticker:
         logger.error(f"Invalid asset for event study: {asset}")
         return []
 
-    # 1. Filter events to MPC only
-    mpc_events = [e for e in events if e.event_type == "MPC" and e.outcome is not None]
-    
+    # Build the event pool and a per-decision filter for the selected type.
+    if event_type == "MPC":
+        if decision_types is None:
+            decision_types = ["hike", "cut", "hold"]
+        pool = [e for e in events if e.event_type == "MPC" and e.outcome is not None]
+
+        def dec_filter(dec: str, ev: MacroEvent) -> bool:
+            if dec == "hike":
+                return bool(ev.outcome and ev.outcome.startswith("hike"))
+            if dec == "cut":
+                return bool(ev.outcome and ev.outcome.startswith("cut"))
+            if dec == "hold":
+                return ev.outcome == "hold"
+            return False
+    else:
+        if decision_types is None:
+            decision_types = ["above", "below"]
+        pool = [e for e in events if e.event_type == event_type and e.surprise_score is not None]
+
+        def dec_filter(dec: str, ev: MacroEvent) -> bool:
+            if ev.surprise_score is None:
+                return False
+            if dec == "above":
+                return ev.surprise_score > 0
+            if dec == "below":
+                return ev.surprise_score < 0
+            return False
+
     results: list[EventStudyPath] = []
 
     for dec_type in decision_types:
+        cache_key = f"{event_type}_{dec_type}"
         # Check cache first
-        cached = get_cached_study(asset, dec_type)
+        cached = get_cached_study(asset, cache_key)
         if cached is not None:
-            logger.info(f"Using cached study path for {asset}/{dec_type}")
+            logger.info(f"Using cached study path for {asset}/{cache_key}")
             try:
                 results.append(EventStudyPath(
                     decision_type=cached["decision_type"],
@@ -74,14 +103,7 @@ def compute_event_study(
                 logger.warning(f"Error parsing cached study path: {e} - recomputing.")
 
         # Filter events by decision type
-        if dec_type == "hike":
-            dec_events = [e for e in mpc_events if e.outcome and e.outcome.startswith("hike")]
-        elif dec_type == "cut":
-            dec_events = [e for e in mpc_events if e.outcome and e.outcome.startswith("cut")]
-        elif dec_type == "hold":
-            dec_events = [e for e in mpc_events if e.outcome == "hold"]
-        else:
-            dec_events = []
+        dec_events = [e for e in pool if dec_filter(dec_type, e)]
 
         logger.info(f"Computing study path for {asset}/{dec_type} with {len(dec_events)} events...")
 
@@ -148,7 +170,7 @@ def compute_event_study(
                 lower_band=[100.0] * 5,
                 event_count=0
             )
-            cache_study(asset, dec_type, path_obj.to_dict())
+            cache_study(asset, cache_key, path_obj.to_dict())
             results.append(path_obj)
             continue
 
@@ -179,7 +201,7 @@ def compute_event_study(
         )
 
         # Cache the result
-        cache_study(asset, dec_type, path_obj.to_dict())
+        cache_study(asset, cache_key, path_obj.to_dict())
         results.append(path_obj)
 
     return results

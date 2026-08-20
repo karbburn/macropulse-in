@@ -11,6 +11,8 @@ Endpoints:
 """
 
 import asyncio
+import csv
+import io
 import logging
 from datetime import date
 from typing import Optional
@@ -22,7 +24,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 
 from modules.event_calendar import load_all_events, get_event_by_id, filter_events
@@ -110,6 +112,15 @@ def latest_rates():
         nifty = {"price": None, "change_pct": None, "date": None}
         errors.append(f"nifty: {e}")
     
+    # Most recent data point across all indicators, for an "as of" label
+    date_candidates = [
+        repo.get("date"),
+        cpi.get("date"),
+        iip.get("date"),
+        nifty.get("date"),
+    ]
+    as_of = max((d for d in date_candidates if d), default=None)
+
     return {
         "repo_rate": repo["rate"],
         "repo_decision": repo["decision"],
@@ -121,6 +132,7 @@ def latest_rates():
         "nifty_price": nifty["price"],
         "nifty_change_pct": nifty["change_pct"],
         "nifty_date": nifty["date"],
+        "as_of": as_of,
         "error": "; ".join(errors) if errors else None,
     }
 
@@ -290,16 +302,26 @@ def get_scatter(
 
 @app.get("/study")
 def get_study(
-    asset: str = Query(..., description="Asset class: NIFTY or USDINR"),
+    asset: str = Query(..., description="Asset class: NIFTY, USDINR, VIX, or GSEC"),
+    event_type: str = Query(default="MPC", description="Event type: MPC, CPI, or IIP"),
 ) -> dict:
     """
-    Returns event study paths (hike, cut, hold) for NIFTY or USDINR.
+    Returns event study paths for the given asset and event type.
+    MPC groups by policy action (hike / cut / hold); CPI and IIP group by
+    consensus surprise direction (above / below).
     """
     asset = asset.upper()
-    if asset not in ["NIFTY", "USDINR"]:
+    if asset not in ["NIFTY", "USDINR", "VIX", "GSEC"]:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid asset: '{asset}'. Event study only supports NIFTY or USDINR."
+            detail=f"Invalid asset: '{asset}'. Event study supports NIFTY, USDINR, VIX, GSEC."
+        )
+
+    event_type = event_type.upper()
+    if event_type not in ["MPC", "CPI", "IIP"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid event_type: '{event_type}'. Must be MPC, CPI, or IIP."
         )
 
     try:
@@ -309,12 +331,13 @@ def get_study(
         raise HTTPException(status_code=500, detail="Failed to load events")
 
     try:
-        paths = compute_event_study(all_events, asset)
+        paths = compute_event_study(all_events, asset, event_type)
     except Exception as e:
-        logger.error(f"Error computing event study for {asset}: {e}")
+        logger.error(f"Error computing event study for {asset}/{event_type}: {e}")
         raise HTTPException(status_code=500, detail="Internal error computing event study. Please try again later.")
 
     return {
+        "event_type": event_type,
         "paths": [p.to_dict() for p in paths]
     }
 
@@ -325,6 +348,167 @@ class ReportRequest(BaseModel):
     include_scatter: bool
     include_study: bool
     include_reaction: bool = False
+
+
+@app.get("/export/events")
+def export_events(
+    event_type: str = Query(default="all", description="Filter by event type: MPC, CPI, IIP, or all"),
+    from_date: Optional[str] = Query(default=None, description="Start date filter (YYYY-MM-DD)"),
+    to_date: Optional[str] = Query(default=None, description="End date filter (YYYY-MM-DD)"),
+) -> StreamingResponse:
+    """
+    Returns all matching events as a downloadable CSV.
+    """
+    event_type = event_type.upper()
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Error loading events for export: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load events")
+
+    parsed_from = parsed_to = None
+    if from_date:
+        try:
+            parsed_from = date.fromisoformat(from_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid from_date: '{from_date}'. Use YYYY-MM-DD.")
+    if to_date:
+        try:
+            parsed_to = date.fromisoformat(to_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid to_date: '{to_date}'. Use YYYY-MM-DD.")
+
+    filtered = filter_events(
+        events=all_events,
+        event_type=event_type if event_type != "all" else None,
+        from_date=parsed_from,
+        to_date=parsed_to,
+        limit=500,
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "event_type", "date", "time", "outcome", "actual", "consensus", "surprise_score", "notes"])
+    for e in filtered:
+        writer.writerow([
+            e.id, e.event_type, e.date.isoformat(),
+            e.time.isoformat() if e.time else "",
+            e.outcome or "", e.actual if e.actual is not None else "",
+            e.consensus if e.consensus is not None else "",
+            e.surprise_score if e.surprise_score is not None else "",
+            e.notes or "",
+        ])
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=macropulse-events-{date.today().isoformat()}.csv"},
+    )
+
+
+@app.get("/export/event/{event_id}")
+def export_event(event_id: str) -> StreamingResponse:
+    """
+    Returns the cross-asset reaction snapshots for a single event as a CSV.
+    """
+    event = get_event_by_id(event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
+
+    try:
+        snapshots = get_all_snapshots(event)
+    except Exception as e:
+        logger.error(f"Error computing snapshots for export {event_id}: {e}")
+        snapshots = {"NIFTY": None, "USDINR": None, "VIX": None, "GSEC": None}
+
+    windows = ["T-60", "T0", "T+30", "T+2H", "T+1D"]
+    assets = ["NIFTY", "USDINR", "VIX", "GSEC"]
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["asset", "window", "price", "pct_change_from_T60", "resolution"])
+    for asset in assets:
+        snap = snapshots.get(asset)
+        if not snap:
+            continue
+        for window in windows:
+            wd = snap.get(window)
+            if not wd:
+                continue
+            writer.writerow([
+                asset, window,
+                wd.get("price") if wd.get("price") is not None else "",
+                wd.get("pct_change_from_T60") if wd.get("pct_change_from_T60") is not None else "",
+                wd.get("resolution") or "",
+            ])
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=macropulse-{event_id}-snapshots.csv"},
+    )
+
+
+@app.get("/rss")
+def rss_feed() -> str:
+    """
+    Returns the latest macro events as an RSS 2.0 feed.
+    """
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Error loading events for RSS: {e}")
+        all_events = []
+
+    recent = sorted(all_events, key=lambda e: e.date, reverse=True)[:30]
+
+    def esc(text: str) -> str:
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+
+    items = []
+    for e in recent:
+        title = f"{e.event_type} {e.date}"
+        if e.outcome:
+            title += f" — {e.outcome}"
+        link = f"https://macropulse-in.vercel.app/events/{e.id}"
+        desc_parts = []
+        if e.actual is not None:
+            desc_parts.append(f"Actual: {e.actual}")
+        if e.consensus is not None:
+            desc_parts.append(f"Consensus: {e.consensus}")
+        if e.surprise_score is not None:
+            desc_parts.append(f"Surprise: {e.surprise_score:.1f}σ")
+        if e.notes:
+            desc_parts.append(e.notes)
+        pub_date = e.date.strftime("%a, %d %b %Y 00:00:00 +0530")
+        items.append(
+            f"    <item>\n"
+            f"      <title>{esc(title)}</title>\n"
+            f"      <link>{link}</link>\n"
+            f"      <guid>{link}</guid>\n"
+            f"      <pubDate>{pub_date}</pubDate>\n"
+            f"      <description>{esc(' · '.join(desc_parts))}</description>\n"
+            f"    </item>"
+        )
+
+    rss = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0">\n'
+        "  <channel>\n"
+        "    <title>MacroPulse — India Edition</title>\n"
+        "    <link>https://macropulse-in.vercel.app</link>\n"
+        "    <description>Latest Indian macro events: RBI MPC, CPI, and IIP.</description>\n"
+        "    <language>en-in</language>\n"
+        f"{chr(10).join(items)}\n"
+        "  </channel>\n"
+        "</rss>"
+    )
+
+    return Response(content=rss, media_type="application/rss+xml")
 
 
 @app.post("/report")

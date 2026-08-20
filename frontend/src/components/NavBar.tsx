@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, BarChart3, Download } from 'lucide-react'
-import useSWR from 'swr'
-import { fetchLatestRates } from '@/lib/api'
+import { useRates } from '@/components/RatesProvider'
 
 
 /**
@@ -19,19 +18,18 @@ const NAV_ITEMS = [
   { href: '/', label: 'HOME', mobileLabel: 'Timeline', icon: Home },
   { href: '/study', label: 'STUDY', mobileLabel: 'Study', icon: BarChart3 },
   { href: '/report', label: 'REPORT', mobileLabel: 'Report', icon: Download },
+  { href: '/scatter', label: 'SCATTER', mobileLabel: 'Scatter', icon: BarChart3 },
 ] as const
 
 export function NavBar() {
   const pathname = usePathname()
-
-  const { data: rates } = useSWR('latest-rates', fetchLatestRates, {
-    revalidateOnFocus: false,
-    dedupingInterval: 3600000,   // 1 hour - matches backend cache
-  })
+  const { rates, isLoading } = useRates()
 
   const repoLabel = rates?.repo_rate != null
     ? `RBI: ${rates.repo_rate.toFixed(2)}%`
-    : 'RBI: -'
+    : isLoading
+      ? 'RBI: ···'
+      : 'RBI: —'
 
 
   const isActive = (href: string) => {

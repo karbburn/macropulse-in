@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
+import { RatesProvider } from "@/components/RatesProvider";
 
 
 const dmSerifDisplay = DM_Serif_Display({
@@ -34,15 +35,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "MacroPulse - India Edition",
     description: "Analyze Indian macroeconomic event impacts on financial markets.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "MacroPulse - Track India's Economic Story",
-      },
-    ],
     type: "website",
+    siteName: "MacroPulse",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MacroPulse - India Edition",
+    description: "Analyze Indian macroeconomic event impacts on financial markets.",
   },
 };
 
@@ -63,16 +62,31 @@ export default function RootLayout({
       className={`${dmSerifDisplay.variable} ${syne.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NavBar />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'MacroPulse — India Edition',
+              url: 'https://macropulse-in.vercel.app',
+              description:
+                'Event-impact analytics for Indian macro markets: RBI MPC, CPI, and IIP surprise, reaction, and attribution.',
+            }),
+          }}
+        />
+        <RatesProvider>
+          <NavBar />
 
-        {/* Main Content — pb-20 on mobile for bottom tab bar clearance */}
-        <main className="flex-1 pb-20 md:pb-0">
-          <AnimatePresence mode="wait">
-            {children}
-          </AnimatePresence>
-        </main>
+          {/* Main Content — pb-20 on mobile for bottom tab bar clearance */}
+          <main className="flex-1 pb-20 md:pb-0">
+            <AnimatePresence mode="wait">
+              {children}
+            </AnimatePresence>
+          </main>
 
-        <Footer />
+          <Footer />
+        </RatesProvider>
 
       </body>
     </html>

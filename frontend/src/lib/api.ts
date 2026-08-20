@@ -69,8 +69,12 @@ export async function fetchScatter(
   return res.json();
 }
 
-export async function fetchStudy(asset: string): Promise<{ paths: EventStudyPath[] }> {
-  const res = await fetch(`${BASE_URL}/study?asset=${asset}`, {
+export async function fetchStudy(
+  asset: string,
+  eventType: string = 'MPC'
+): Promise<{ event_type: string; paths: EventStudyPath[] }> {
+  const params = new URLSearchParams({ asset, event_type: eventType });
+  const res = await fetch(`${BASE_URL}/study?${params.toString()}`, {
     next: { revalidate: 3600 },
   });
 

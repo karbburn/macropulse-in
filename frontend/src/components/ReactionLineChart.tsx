@@ -105,7 +105,7 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
 
   return (
     <AnimatedChart>
-      <div className="h-[220px] md:h-[320px] w-full relative select-none">
+      <div className="h-[220px] md:h-[320px] w-full relative select-none" role="img" aria-label="Cross-asset reaction line chart across event windows">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
@@ -145,10 +145,25 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               domain={['auto', 'auto']}
             />
 
-            <ReferenceLine 
-              y={0} 
-              stroke="var(--border-strong)" 
-              strokeWidth={1.5} 
+            <ReferenceLine
+              y={0}
+              stroke="var(--border-strong)"
+              strokeWidth={1.5}
+            />
+
+            {/* Event-time marker (T0) */}
+            <ReferenceLine
+              x="T0"
+              stroke="var(--accent-primary)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              label={{
+                value: 'Event',
+                position: 'top',
+                fill: 'var(--accent-primary)',
+                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+              }}
             />
 
             {/* Custom Tooltip */}
