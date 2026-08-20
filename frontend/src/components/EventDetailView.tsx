@@ -177,7 +177,13 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
                   Surprise Deviation
                 </span>
                 <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider mt-1">
-                  Historical volatility metric
+                  {event.surprise_method === 'trailing_mean'
+                    ? 'vs trailing 6-mo mean'
+                    : event.surprise_method === 'consensus_raw'
+                    ? 'raw miss vs consensus (pp)'
+                    : event.surprise_method === 'consensus_sigma'
+                    ? 'vs consensus, σ-scaled'
+                    : 'Historical volatility metric'}
                 </span>
               </div>
               <div className="flex flex-col items-end">

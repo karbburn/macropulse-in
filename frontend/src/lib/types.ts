@@ -7,6 +7,7 @@ export interface MacroEvent {
   actual: number | null;
   consensus: number | null;
   surprise_score: number | null;
+  surprise_method: string | null;
   notes: string | null;
 }
 
