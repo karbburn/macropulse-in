@@ -145,6 +145,16 @@ export default function EventStudyChart({
               domain={['auto', 'auto']}
             />
             <ReferenceLine x={0} stroke="var(--accent-primary)" strokeWidth={1.5} strokeDasharray="4 4" />
+            {[-2, -1, 1, 2].map((d) => (
+              <ReferenceLine
+                key={d}
+                x={d}
+                stroke="var(--border-subtle)"
+                strokeWidth={1}
+                strokeOpacity={0.4}
+                ifOverflow="extendDomain"
+              />
+            ))}
             <Tooltip content={<CustomTooltip />} />
             {series.map((s) => {
               const visible = visibleSeries[s.key] !== false;

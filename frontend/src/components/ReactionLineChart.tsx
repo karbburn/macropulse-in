@@ -145,10 +145,25 @@ export default function ReactionLineChart({ snapshots }: ReactionLineChartProps)
               domain={['auto', 'auto']}
             />
 
-            <ReferenceLine 
-              y={0} 
-              stroke="var(--border-strong)" 
-              strokeWidth={1.5} 
+            <ReferenceLine
+              y={0}
+              stroke="var(--border-strong)"
+              strokeWidth={1.5}
+            />
+
+            {/* Event-time marker (T0) */}
+            <ReferenceLine
+              x="T0"
+              stroke="var(--accent-primary)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              label={{
+                value: 'Event',
+                position: 'top',
+                fill: 'var(--accent-primary)',
+                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+              }}
             />
 
             {/* Custom Tooltip */}
