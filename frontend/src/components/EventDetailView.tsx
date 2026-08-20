@@ -209,7 +209,10 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
 
             <hr className="border-border-subtle/60" />
 
-            <div className="flex flex-col gap-2">
+            <div
+              className="flex flex-col gap-2 rounded-[4px] border border-border-subtle border-l-2 px-4 py-3"
+              style={{ borderLeftColor: 'var(--accent-primary)' }}
+            >
               <span className="font-body text-xs text-text-tertiary uppercase tracking-wider">
                 Macroeconomic Assessment
               </span>
