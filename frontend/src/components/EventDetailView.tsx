@@ -61,6 +61,19 @@ const getSurpriseContext = (eventType: string, score: number | null, outcome: st
   return "Unexpected macro print — market analyzing implications.";
 };
 
+const getSource = (eventType: string): { label: string; url: string } => {
+  switch (eventType) {
+    case 'MPC':
+      return { label: 'RBI Press Release', url: 'https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx' };
+    case 'CPI':
+      return { label: 'MOSPI — CPI', url: 'https://www.mospi.gov.in/web/mospi/cpi' };
+    case 'IIP':
+      return { label: 'MOSPI — IIP', url: 'https://www.mospi.gov.in/web/mospi/iip' };
+    default:
+      return { label: 'Data Source', url: 'https://www.mospi.gov.in/' };
+  }
+};
+
 export default function EventDetailView({ detail, prevEvent, nextEvent }: EventDetailViewProps) {
   const { event, snapshots } = detail;
 
@@ -220,6 +233,15 @@ export default function EventDetailView({ detail, prevEvent, nextEvent }: EventD
                 {getSurpriseContext(event.event_type, event.surprise_score, event.outcome || '')}
               </p>
             </div>
+
+            <a
+              href={getSource(event.event_type).url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-body text-xs text-text-tertiary hover:text-[var(--accent-primary)] transition-colors select-none"
+            >
+              Source: {getSource(event.event_type).label} ↗
+            </a>
           </div>
         </motion.div>
       </div>
