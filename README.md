@@ -154,12 +154,9 @@ MacroPulse/
 │           ├── api.ts             # API client
 │           ├── types.ts           # Interfaces
 │           └── motion.ts          # Framer Motion variants
-├── .github/workflows/
-│   ├── nightly_precompute.yml     # Daily snapshot precompute
-│   └── render-keepalive.yml       # /health ping every 5 min
-└── assets/
-    ├── macropulse-DESIGN.md       # Design system
-    └── macro-tracker-TECHSPEC.md  # Technical specification
+└── .github/workflows/
+    ├── nightly_precompute.yml     # Daily snapshot precompute
+    └── render-keepalive.yml       # /health ping every 5 min
 ```
 
 ## API reference
