@@ -6,245 +6,166 @@ import { ChevronDown } from 'lucide-react';
 import { PageWrapper } from '../../components/PageWrapper';
 import { fetchStudy } from '../../lib/api';
 import { EventStudyPath } from '../../lib/types';
-import EventStudyChart from '../../components/EventStudyChart';
+import EventStudyChart, { StudySeries } from '../../components/EventStudyChart';
 import { scaleVariants, useSafeVariants } from '../../lib/motion';
+
+const ASSETS = ['NIFTY', 'USDINR', 'VIX', 'GSEC'] as const;
+const EVENT_TYPES = ['MPC', 'CPI', 'IIP'] as const;
+
+const TYPE_META: Record<string, { title: string; subtitle: string }> = {
+  MPC: {
+    title: 'RBI MPC Decisions',
+    subtitle:
+      'Average indexed market path (indexed to 100 on Event Day T0) from T-2 to T+2 trading days, grouped by policy action.',
+  },
+  CPI: {
+    title: 'CPI Inflation Prints',
+    subtitle:
+      'Average indexed market path around CPI releases, grouped by whether the print landed above or below consensus.',
+  },
+  IIP: {
+    title: 'IIP Production Prints',
+    subtitle:
+      'Average indexed market path around IIP releases, grouped by whether the print landed above or below consensus.',
+  },
+};
+
+const LABELS: Record<string, string> = {
+  hike: 'Rate Hike',
+  cut: 'Rate Cut',
+  hold: 'Policy Hold',
+  above: 'Above Consensus',
+  below: 'Below Consensus',
+};
+
+function ToggleGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
+        {label}
+      </span>
+      <div className="flex gap-2 flex-wrap">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
+              value === opt
+                ? 'bg-[var(--accent-primary)] text-text-inverse'
+                : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function t1dReturn(path: EventStudyPath): number | null {
+  const idx = path.days.indexOf(1);
+  if (idx === -1 || path.mean_indexed[idx] == null) return null;
+  return path.mean_indexed[idx] - 100;
+}
+
+const fmtReturn = (val: number | null) => {
+  if (val === null) return '-';
+  const f = val.toFixed(2);
+  return val > 0 ? `+${f}%` : `${f}%`;
+};
+
+const returnColor = (val: number | null) => {
+  if (val === null) return 'text-text-tertiary';
+  if (val > 0.001) return 'text-[var(--positive)]';
+  if (val < -0.001) return 'text-[var(--negative)]';
+  return 'text-text-secondary';
+};
 
 export default function StudyPage() {
   const reduce = useReducedMotion();
   const safeScale = useSafeVariants(scaleVariants);
 
-  // States
-  const [asset, setAsset] = useState<'NIFTY' | 'USDINR'>('NIFTY');
+  const [asset, setAsset] = useState<(typeof ASSETS)[number]>('NIFTY');
+  const [eventType, setEventType] = useState<(typeof EVENT_TYPES)[number]>('MPC');
   const [paths, setPaths] = useState<EventStudyPath[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Unified visibility state for Hike, Cut, Hold series
-  const [visibleSeries, setVisibleSeries] = useState({
-    hike: true,
-    cut: true,
-    hold: true,
-  });
-
-  // Collapsible methodology section state
+  const [visibleSeries, setVisibleSeries] = useState<Record<string, boolean>>({});
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  // Fetch event study data on asset change
   useEffect(() => {
     let active = true;
     setIsLoading(true);
     setError(null);
-
-    fetchStudy(asset)
+    fetchStudy(asset, eventType)
       .then((data) => {
-        if (active) {
-          setPaths(data.paths);
-        }
+        if (!active) return;
+        setPaths(data.paths);
+        setVisibleSeries(
+          Object.fromEntries(data.paths.map((p) => [p.decision_type, true]))
+        );
       })
       .catch((err) => {
-        if (active) {
-          setError(err?.message || 'Failed to load event study data.');
-        }
+        if (active) setError(err?.message || 'Failed to load event study data.');
       })
       .finally(() => {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       });
-
     return () => {
       active = false;
     };
-  }, [asset]);
+  }, [asset, eventType]);
 
-  // Find paths
-  const hikePath = paths.find((p) => p.decision_type === 'hike');
-  const cutPath = paths.find((p) => p.decision_type === 'cut');
-  const holdPath = paths.find((p) => p.decision_type === 'hold');
+  const series: StudySeries[] = paths.map((p) => ({
+    key: p.decision_type,
+    label: LABELS[p.decision_type] ?? p.decision_type,
+    color: '',
+    days: p.days,
+    mean: p.mean_indexed,
+    upper: p.upper_band,
+    lower: p.lower_band,
+    count: p.event_count,
+  }));
 
-  const counts = {
-    hike: hikePath?.event_count ?? 0,
-    cut: cutPath?.event_count ?? 0,
-    hold: holdPath?.event_count ?? 0,
-  };
-
-  // Prepare chart data (days -2 to +2)
   const days = [-2, -1, 0, 1, 2];
-  const chartData = days.map((day) => {
-    const point: {
-      dayVal: number;
-      hikeMean: number | null;
-      hikeBand: [number, number] | null;
-      cutMean: number | null;
-      cutBand: [number, number] | null;
-      holdMean: number | null;
-      holdBand: [number, number] | null;
-    } = {
-      dayVal: day,
-      hikeMean: null,
-      hikeBand: null,
-      cutMean: null,
-      cutBand: null,
-      holdMean: null,
-      holdBand: null,
-    };
-
-    if (hikePath) {
-      const idx = hikePath.days.indexOf(day);
-      if (idx !== -1) {
-        point.hikeMean = parseFloat(hikePath.mean_indexed[idx].toFixed(3));
-        point.hikeBand = [
-          parseFloat(hikePath.lower_band[idx].toFixed(3)),
-          parseFloat(hikePath.upper_band[idx].toFixed(3)),
-        ];
-      }
-    }
-
-    if (cutPath) {
-      const idx = cutPath.days.indexOf(day);
-      if (idx !== -1) {
-        point.cutMean = parseFloat(cutPath.mean_indexed[idx].toFixed(3));
-        point.cutBand = [
-          parseFloat(cutPath.lower_band[idx].toFixed(3)),
-          parseFloat(cutPath.upper_band[idx].toFixed(3)),
-        ];
-      }
-    }
-
-    if (holdPath) {
-      const idx = holdPath.days.indexOf(day);
-      if (idx !== -1) {
-        point.holdMean = parseFloat(holdPath.mean_indexed[idx].toFixed(3));
-        point.holdBand = [
-          parseFloat(holdPath.lower_band[idx].toFixed(3)),
-          parseFloat(holdPath.upper_band[idx].toFixed(3)),
-        ];
-      }
-    }
-
-    return point;
-  });
-
-  // Calculate Avg T+1D return for each path (indexed_value_at_T1 - 100)
-  const calculateT1DReturn = (path: EventStudyPath | undefined) => {
-    if (!path) return null;
-    const idxOfTPlus1 = path.days.indexOf(1);
-    if (idxOfTPlus1 === -1) return null;
-    return path.mean_indexed[idxOfTPlus1] - 100;
-  };
-
-  const hikeReturn = calculateT1DReturn(hikePath);
-  const cutReturn = calculateT1DReturn(cutPath);
-  const holdReturn = calculateT1DReturn(holdPath);
-
-  const formatReturn = (val: number | null) => {
-    if (val === null) return '-';
-
-    const formatted = val.toFixed(2);
-    return val > 0 ? `+${formatted}%` : `${formatted}%`;
-  };
-
-  const getReturnColorClass = (val: number | null) => {
-    if (val === null) return 'text-text-tertiary';
-    if (val > 0.001) return 'text-[var(--positive)]';
-    if (val < -0.001) return 'text-[var(--negative)]';
-    return 'text-text-secondary';
-  };
+  const meta = TYPE_META[eventType];
 
   return (
     <PageWrapper>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex flex-col gap-6 md:gap-8">
-        
-        {/* Page Header */}
         <div className="flex flex-col gap-2 text-left">
           <h1 className="font-display text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
-            RBI MPC Decisions <span className="text-[var(--accent-primary)] font-display italic">Event Study</span>
+            {meta.title} <span className="text-[var(--accent-primary)] font-display italic">Event Study</span>
           </h1>
-          <p className="text-sm text-text-secondary max-w-xl font-body">
-            Analyze the average indexed market path (indexed to 100 on Event Day T0) from T-2 to T+2 trading days for hikes, cuts, and holds.
-          </p>
+          <p className="text-sm text-text-secondary max-w-xl font-body">{meta.subtitle}</p>
         </div>
 
-        {/* STEP 1: Asset + Decision Type Toggle Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-border-subtle pb-6 mt-2">
-          {/* Asset Selection */}
-          <div className="flex flex-col gap-2">
-            <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
-              Asset
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setAsset('NIFTY')}
-                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
-                  asset === 'NIFTY'
-                    ? 'bg-[var(--accent-primary)] text-text-inverse'
-                    : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
-                }`}
-              >
-                Nifty 50
-              </button>
-              <button
-                onClick={() => setAsset('USDINR')}
-                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
-                  asset === 'USDINR'
-                    ? 'bg-[var(--accent-primary)] text-text-inverse'
-                    : 'border border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
-                }`}
-              >
-                USD / INR
-              </button>
-            </div>
-          </div>
-
-          {/* Series Visibility Toggles */}
-          <div className="flex flex-col gap-2">
-            <span className="font-body text-xs font-semibold tracking-widest text-text-tertiary uppercase select-none">
-              Decision
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setVisibleSeries((prev) => ({ ...prev, hike: !prev.hike }))}
-                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
-                  visibleSeries.hike
-                    ? 'bg-[var(--chart-hike)] text-text-inverse font-bold'
-                    : 'border border-border-strong text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                Hike
-              </button>
-              <button
-                onClick={() => setVisibleSeries((prev) => ({ ...prev, cut: !prev.cut }))}
-                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
-                  visibleSeries.cut
-                    ? 'bg-[var(--chart-cut)] text-text-inverse font-bold'
-                    : 'border border-border-strong text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                Cut
-              </button>
-              <button
-                onClick={() => setVisibleSeries((prev) => ({ ...prev, hold: !prev.hold }))}
-                className={`rounded-[4px] px-5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors select-none cursor-pointer ${
-                  visibleSeries.hold
-                    ? 'bg-[var(--chart-hold)] text-text-inverse font-bold'
-                    : 'border border-border-strong text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                Hold
-              </button>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-end justify-between gap-6 border-b border-border-subtle pb-6 mt-2">
+          <ToggleGroup label="Asset" options={ASSETS} value={asset} onChange={setAsset} />
+          <ToggleGroup label="Event Type" options={EVENT_TYPES} value={eventType} onChange={setEventType} />
         </div>
 
-        {/* Error State */}
         {error && (
-          <div className="rounded-[4px] border border-border-strong p-6 text-center" style={{ borderColor: 'var(--negative)', background: 'var(--negative-dim)' }}>
+          <div
+            className="rounded-[4px] border p-6 text-center"
+            style={{ borderColor: 'var(--negative)', background: 'var(--negative-dim)' }}
+          >
             <p className="text-[var(--negative)] font-semibold font-body">Failed to load study data</p>
             <p className="text-text-secondary text-sm mt-1">{error}</p>
           </div>
         )}
 
-        {/* STEP 2: Main Event Study Chart */}
         {isLoading ? (
           <div className="flex h-[320px] md:h-[400px] flex-col items-center justify-center rounded-[4px] border border-border-subtle bg-bg-surface p-6 text-text-secondary">
             <div className="spinner h-8 w-8 mb-4"></div>
@@ -255,140 +176,93 @@ export default function StudyPage() {
         ) : (
           <div className="rounded-[4px] border border-border-subtle bg-bg-surface p-5 md:p-6 hover:border-border-strong transition-colors">
             <EventStudyChart
-              data={chartData}
+              days={days}
+              series={series}
               visibleSeries={visibleSeries}
-              setVisibleSeries={setVisibleSeries}
-              counts={counts}
+              onToggle={(key) =>
+                setVisibleSeries((prev) => ({ ...prev, [key]: !prev[key] }))
+              }
             />
           </div>
         )}
 
-        {/* STEP 3: Stat Cards Below Chart */}
-        {!isLoading && (
+        {!isLoading && paths.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
-            {/* Hike Card */}
-            <motion.div
-              variants={safeScale}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
-                visibleSeries.hike ? 'opacity-100' : 'opacity-40'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-body text-xs font-semibold tracking-wider text-[var(--chart-hike)] uppercase">
-                  Rate Hike Averages
-                </span>
-                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
-                  N = {counts.hike}
-                </span>
-              </div>
-              <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${getReturnColorClass(hikeReturn)}`}>
-                {formatReturn(hikeReturn)}
-              </span>
-              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
-                Average T+1D Return
-              </span>
-            </motion.div>
-
-            {/* Cut Card */}
-            <motion.div
-              variants={safeScale}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
-                visibleSeries.cut ? 'opacity-100' : 'opacity-40'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-body text-xs font-semibold tracking-wider text-[var(--chart-cut)] uppercase">
-                  Rate Cut Averages
-                </span>
-                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
-                  N = {counts.cut}
-                </span>
-              </div>
-              <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${getReturnColorClass(cutReturn)}`}>
-                {formatReturn(cutReturn)}
-              </span>
-              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
-                Average T+1D Return
-              </span>
-            </motion.div>
-
-            {/* Hold Card */}
-            <motion.div
-              variants={safeScale}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
-                visibleSeries.hold ? 'opacity-100' : 'opacity-40'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-body text-xs font-semibold tracking-wider text-[var(--chart-hold)] uppercase">
-                  Policy Hold Averages
-                </span>
-                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
-                  N = {counts.hold}
-                </span>
-              </div>
-              <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${getReturnColorClass(holdReturn)}`}>
-                {formatReturn(holdReturn)}
-              </span>
-              <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
-                Average T+1D Return
-              </span>
-            </motion.div>
+            {series.map((s) => {
+              const path = paths.find((p) => p.decision_type === s.key)!;
+              const ret = t1dReturn(path);
+              return (
+                <motion.div
+                  key={s.key}
+                  variants={safeScale}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: '-60px' }}
+                  className={`rounded-[4px] border border-border-subtle bg-bg-surface p-5 flex flex-col justify-between h-[120px] hover:border-border-strong transition-all duration-300 ${
+                    visibleSeries[s.key] === false ? 'opacity-40' : 'opacity-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-body text-xs font-semibold tracking-wider text-text-tertiary uppercase">
+                      {s.label}
+                    </span>
+                    <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
+                      N = {s.count}
+                    </span>
+                  </div>
+                  <span className={`font-mono text-3xl font-bold tracking-tight tabular-nums leading-none ${returnColor(ret)}`}>
+                    {fmtReturn(ret)}
+                  </span>
+                  <span className="font-body text-[10px] text-text-tertiary uppercase tracking-wider">
+                    Average T+1D Return
+                  </span>
+                </motion.div>
+              );
+            })}
           </div>
         )}
 
-        {/* STEP 4: Collapsible Methodology Note */}
         <div className="border-t border-border-subtle pt-6 mt-4">
           <button
             onClick={() => setIsMethodologyOpen(!isMethodologyOpen)}
             className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-[var(--accent-primary)] transition-colors select-none font-body uppercase tracking-widest cursor-pointer group"
           >
             <span>How this study is computed</span>
-            <ChevronDown 
-              size={14} 
+            <ChevronDown
+              size={14}
               className={`transform transition-transform duration-200 text-text-tertiary group-hover:text-text-primary ${
                 isMethodologyOpen ? 'rotate-180' : ''
-              }`} 
+              }`}
             />
           </button>
 
           <motion.div
             layout
             initial={{ height: 0, opacity: 0 }}
-            animate={reduce ? { height: 'auto', opacity: 1 } : {
-              height: isMethodologyOpen ? 'auto' : 0,
-              opacity: isMethodologyOpen ? 1 : 0,
-            }}
+            animate={reduce ? { height: 'auto', opacity: 1 } : { height: isMethodologyOpen ? 'auto' : 0, opacity: isMethodologyOpen ? 1 : 0 }}
             transition={{ duration: reduce ? 0 : 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="overflow-hidden"
           >
             <div className="pt-4 text-sm text-text-secondary font-body leading-relaxed max-w-[75ch] space-y-4">
               <p>
-                An <strong>Event Study</strong> isolates the impact of a specific recurring event type on asset prices.
-                We track the price behavior of the selected asset surrounding all historical RBI Monetary Policy Committee decisions since 2018.
+                An <strong>Event Study</strong> isolates the impact of a recurring event type on asset prices. We
+                track the price path of the selected asset across all historical {meta.title.toLowerCase()} since 2018.
               </p>
               <p>
-                <strong>1. Price Indexation:</strong> For each individual policy decision, the price path is scaled to 100 on the close of the Event Day (T0). Trading days are represented as T-2 to T+2, excluding market holidays and weekends.
+                <strong>1. Price Indexation:</strong> For each event, the price path is scaled to 100 on the close of
+                the Event Day (T0). Trading days are represented as T-2 to T+2, excluding market holidays and weekends.
               </p>
               <p>
-                <strong>2. Path Aggregation:</strong> The thick colored lines plot the arithmetic mean of these indexed paths, grouped by policy decision (Rate Hike, Rate Cut, or Policy Hold).
+                <strong>2. Path Aggregation:</strong> The colored lines plot the arithmetic mean of these indexed
+                paths, grouped by {eventType === 'MPC' ? 'policy decision' : 'surprise direction'}.
               </p>
               <p>
-                <strong>3. Shaded Confidence Bands:</strong> The low-opacity bands represent the ±1 standard deviation range around the mean, demonstrating the volatility and historical dispersion of individual outcomes within each decision group.
+                <strong>3. Shaded Bands:</strong> The low-opacity bands represent the ±1 standard deviation range
+                around the mean, showing the historical dispersion of individual outcomes within each group.
               </p>
             </div>
           </motion.div>
         </div>
-
       </div>
     </PageWrapper>
   );

@@ -300,16 +300,26 @@ def get_scatter(
 
 @app.get("/study")
 def get_study(
-    asset: str = Query(..., description="Asset class: NIFTY or USDINR"),
+    asset: str = Query(..., description="Asset class: NIFTY, USDINR, VIX, or GSEC"),
+    event_type: str = Query(default="MPC", description="Event type: MPC, CPI, or IIP"),
 ) -> dict:
     """
-    Returns event study paths (hike, cut, hold) for NIFTY or USDINR.
+    Returns event study paths for the given asset and event type.
+    MPC groups by policy action (hike / cut / hold); CPI and IIP group by
+    consensus surprise direction (above / below).
     """
     asset = asset.upper()
-    if asset not in ["NIFTY", "USDINR"]:
+    if asset not in ["NIFTY", "USDINR", "VIX", "GSEC"]:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid asset: '{asset}'. Event study only supports NIFTY or USDINR."
+            detail=f"Invalid asset: '{asset}'. Event study supports NIFTY, USDINR, VIX, GSEC."
+        )
+
+    event_type = event_type.upper()
+    if event_type not in ["MPC", "CPI", "IIP"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid event_type: '{event_type}'. Must be MPC, CPI, or IIP."
         )
 
     try:
@@ -319,12 +329,13 @@ def get_study(
         raise HTTPException(status_code=500, detail="Failed to load events")
 
     try:
-        paths = compute_event_study(all_events, asset)
+        paths = compute_event_study(all_events, asset, event_type)
     except Exception as e:
-        logger.error(f"Error computing event study for {asset}: {e}")
+        logger.error(f"Error computing event study for {asset}/{event_type}: {e}")
         raise HTTPException(status_code=500, detail="Internal error computing event study. Please try again later.")
 
     return {
+        "event_type": event_type,
         "paths": [p.to_dict() for p in paths]
     }
 
