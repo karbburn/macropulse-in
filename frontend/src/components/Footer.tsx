@@ -204,6 +204,46 @@ export function Footer() {
             <LinkedinIcon size={12} />
             LinkedIn ↗
           </a>
+
+          {/* API docs */}
+          <a
+            href="https://macropulse-in.onrender.com/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-tertiary)',
+              textDecoration: 'none',
+              letterSpacing: 'var(--tracking-wide)',
+              transition: 'color 150ms ease-out',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+          >
+            API ↗
+          </a>
+
+          {/* RSS */}
+          <a
+            href="https://macropulse-in.onrender.com/rss"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-tertiary)',
+              textDecoration: 'none',
+              letterSpacing: 'var(--tracking-wide)',
+              transition: 'color 150ms ease-out',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+          >
+            RSS ↗
+          </a>
         </div>
       </div>
 

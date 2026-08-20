@@ -24,7 +24,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 
 from modules.event_calendar import load_all_events, get_event_by_id, filter_events
@@ -447,6 +447,68 @@ def export_event(event_id: str) -> StreamingResponse:
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=macropulse-{event_id}-snapshots.csv"},
     )
+
+
+@app.get("/rss")
+def rss_feed() -> str:
+    """
+    Returns the latest macro events as an RSS 2.0 feed.
+    """
+    try:
+        all_events = load_all_events()
+    except Exception as e:
+        logger.error(f"Error loading events for RSS: {e}")
+        all_events = []
+
+    recent = sorted(all_events, key=lambda e: e.date, reverse=True)[:30]
+
+    def esc(text: str) -> str:
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+
+    items = []
+    for e in recent:
+        title = f"{e.event_type} {e.date}"
+        if e.outcome:
+            title += f" — {e.outcome}"
+        link = f"https://macropulse-in.vercel.app/events/{e.id}"
+        desc_parts = []
+        if e.actual is not None:
+            desc_parts.append(f"Actual: {e.actual}")
+        if e.consensus is not None:
+            desc_parts.append(f"Consensus: {e.consensus}")
+        if e.surprise_score is not None:
+            desc_parts.append(f"Surprise: {e.surprise_score:.1f}σ")
+        if e.notes:
+            desc_parts.append(e.notes)
+        pub_date = e.date.strftime("%a, %d %b %Y 00:00:00 +0530")
+        items.append(
+            f"    <item>\n"
+            f"      <title>{esc(title)}</title>\n"
+            f"      <link>{link}</link>\n"
+            f"      <guid>{link}</guid>\n"
+            f"      <pubDate>{pub_date}</pubDate>\n"
+            f"      <description>{esc(' · '.join(desc_parts))}</description>\n"
+            f"    </item>"
+        )
+
+    rss = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0">\n'
+        "  <channel>\n"
+        "    <title>MacroPulse — India Edition</title>\n"
+        "    <link>https://macropulse-in.vercel.app</link>\n"
+        "    <description>Latest Indian macro events: RBI MPC, CPI, and IIP.</description>\n"
+        "    <language>en-in</language>\n"
+        f"{chr(10).join(items)}\n"
+        "  </channel>\n"
+        "</rss>"
+    )
+
+    return Response(content=rss, media_type="application/rss+xml")
 
 
 @app.post("/report")
